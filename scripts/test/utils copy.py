@@ -167,9 +167,6 @@ class Plotter:
         # sns.set_context("talk")
         sns.set_palette("deep")
 
-    def plot_ee_orientation(self):
-        # 
-
     def save_fig(self, file_name: str):
         assert file_name is not None, "file_name cannot be None"
 
