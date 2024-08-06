@@ -7,12 +7,12 @@ import os
 from scipy.spatial.transform import Rotation as R
 from typing import Tuple
 
-WHEEL_COORDINATES = [
+WHEEL_COORDINATES = np.array((
     [0.188, 0.2075],
     [-0.188, 0.2075],
     [-0.188, -0.2075],
     [0.188, -0.2075],
-]
+))
 
 
 class Plotter:
@@ -207,8 +207,9 @@ class Plotter:
         linewidth: int = 1,
         linestyle: str = "-",
         label: str = None,
+        legend: bool = True
     ):
-        sns.lineplot(
+        g = sns.lineplot(
             x=x,
             y=y,
             ax=ax,
@@ -216,7 +217,7 @@ class Plotter:
             linewidth=linewidth,
             linestyle=linestyle,
             color=color,
-            label=label,
+            label=label if legend else None,
         )
 
     def plot_line_over_time(
@@ -238,51 +239,53 @@ class Plotter:
         y2 = y2s.to_list()
 
         # plot the first and last line
-        self.plot_line(ax, x1[0], y1[0], x2[0], y2[0], color, linewidth, linestyle)
-        self.plot_line(ax, x1[-1], y1[-1], x2[-1], y2[-1], color, linewidth, linestyle)
+        self.plot_line(ax, [x1[0], x2[0]], [y1[0], y2[0]], color, linewidth, linestyle)
+        self.plot_line(
+            ax, [x1[-1], x2[-1]], [y1[-1], y2[-1]], color, linewidth, linestyle
+        )
 
         # plot the intermediate lines as a shaded area
         x = x1 + x2
         y = y1 + y2
 
-        ax.fill(x, y, color, alpha=0.75, linewidth=0)
+        ax.fill(x, y, color, alpha=0.25, linewidth=0)
 
     def plot_ee_and_shoulder_lines_over_time(
         self,
         ax: plt.Axes,
     ):
         # draw the line between the xy position of the given dataframes
-        x1 = self.kr_df["ee_s_x"]
-        y1 = self.kr_df["ee_s_y"]
-        x2 = self.kl_df["ee_s_x"]
-        y2 = self.kl_df["ee_s_y"]
+        x1 = self.kr_df["ee_s_x"][:3000]
+        y1 = self.kr_df["ee_s_y"][:3000]
+        x2 = self.kl_df["ee_s_x"][:3000]
+        y2 = self.kl_df["ee_s_y"][:3000]
 
         self.plot_line_over_time(ax, y1, x1, y2, x2, "blue", 2, "-")
 
-        x1 = self.kr_df["arm_base_s_x"]
-        y1 = self.kr_df["arm_base_s_y"]
-        x2 = self.kl_df["arm_base_s_x"]
-        y2 = self.kl_df["arm_base_s_y"]
+        x1 = self.kr_df["arm_base_s_x"][:3000]
+        y1 = self.kr_df["arm_base_s_y"][:3000]
+        x2 = self.kl_df["arm_base_s_x"][:3000]
+        y2 = self.kl_df["arm_base_s_y"][:3000]
 
         self.plot_line_over_time(ax, y1, x1, y2, x2, "red", 2, "-")
 
         # plot line from shoulder to elbow and elbow to end effector
-        rsx = self.kr_df["arm_base_s_x"]
-        rsy = self.kr_df["arm_base_s_y"]
-        rex = self.kr_df["elbow_s_x"]
-        rey = self.kr_df["elbow_s_y"]
-        reex = self.kr_df["ee_s_x"]
-        reey = self.kr_df["ee_s_y"]
+        rsx = self.kr_df["arm_base_s_x"][:3000]
+        rsy = self.kr_df["arm_base_s_y"][:3000]
+        rex = self.kr_df["elbow_s_x"][:3000]
+        rey = self.kr_df["elbow_s_y"][:3000]
+        reex = self.kr_df["ee_s_x"][:3000]
+        reey = self.kr_df["ee_s_y"][:3000]
 
         self.plot_line_over_time(ax, rsy, rsx, rey, rex, "green", 1, "--")
         self.plot_line_over_time(ax, rey, rex, reey, reex, "green", 1, "--")
 
-        lsx = self.kl_df["arm_base_s_x"]
-        lsy = self.kl_df["arm_base_s_y"]
-        lex = self.kl_df["elbow_s_x"]
-        ley = self.kl_df["elbow_s_y"]
-        leex = self.kl_df["ee_s_x"]
-        leey = self.kl_df["ee_s_y"]
+        lsx = self.kl_df["arm_base_s_x"][:3000]
+        lsy = self.kl_df["arm_base_s_y"][:3000]
+        lex = self.kl_df["elbow_s_x"][:3000]
+        ley = self.kl_df["elbow_s_y"][:3000]
+        leex = self.kl_df["ee_s_x"][:3000]
+        leey = self.kl_df["ee_s_y"][:3000]
 
         self.plot_line_over_time(ax, lsy, lsx, ley, lex, "gray", 1, "--")
         self.plot_line_over_time(ax, ley, lex, leey, leex, "gray", 1, "--")
@@ -353,90 +356,140 @@ class Plotter:
     def distance(self, x1, y1, x2, y2):
         return np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
+    def get_point_at_distance(self, x1, y1, x2, y2, distance):
+        direction_x = x2 - x1
+        direction_y = y2 - y1
+        length = self.distance(x1, y1, x2, y2)
+        unit_direction_x = direction_x / length
+        unit_direction_y = direction_y / length
+        new_x = x1 + distance * unit_direction_x
+        new_y = y1 + distance * unit_direction_y
+        return new_x, new_y
+
+    def translate_point_with_odom(self, point):
+        ox = self.mb_df["x_platform_x"].iloc[-1]
+        oy = self.mb_df["x_platform_y"].iloc[-1]
+        oqz = self.mb_df["x_platform_qz"].iloc[-1]
+
+        r = R.from_quat([0, 0, np.sin(oqz / 2), np.cos(oqz / 2)])
+        point = np.array([point[0], point[1], 0])
+        point = r.apply(point)
+        point[0] += ox
+        point[1] += oy
+        return point
+
     def plot_ee_and_shoulder_lines(
         self,
         ax: plt.Axes,
         data_index: int,
+        use_odometry: bool = False,
+        legend: bool = True,
     ):
         # draw the line between the xy position of the given dataframes
-        x1 = self.kr_df["ee_s_x"][data_index]
-        y1 = self.kr_df["ee_s_y"][data_index]
-        x2 = self.kl_df["ee_s_x"][data_index]
-        y2 = self.kl_df["ee_s_y"][data_index]
-
-        self.plot_line(ax, [y1, y2], [x1, x2], "blue", 2, "-", "Table")
-        self.plot_marker(ax, [y1, y2], [x1, x2], "black", "o", 100)
-
-        x1b = self.kr_df["arm_base_s_x"][data_index]
-        y1b = self.kr_df["arm_base_s_y"][data_index]
-        x2b = self.kl_df["arm_base_s_x"][data_index]
-        y2b = self.kl_df["arm_base_s_y"][data_index]
-
-        self.plot_line(ax, [y1b, y2b], [x1b, x2b], "red", 2, "-", "Base")
-        self.plot_marker(ax, [y1b], [x1b], "black", "o", 100)
-
-        # distance between the arm shoulder to ee
-        kr_dist = self.distance(x1, y1, x1b, y1b)
-        kl_dist = self.distance(x2, y2, x2b, y2b)
-
-        # find the points of the line that are at 0.75 distance from ee
-        def get_point_at_distance(x1, y1, x2, y2, distance):
-            direction_x = x2 - x1
-            direction_y = y2 - y1
-            length = self.distance(x1, y1, x2, y2)
-            unit_direction_x = direction_x / length
-            unit_direction_y = direction_y / length
-            new_x = x1 + distance * unit_direction_x
-            new_y = y1 + distance * unit_direction_y
-            return new_x, new_y
-
-        x1_75, y1_75 = get_point_at_distance(x1, y1, x1b, y1, 0.6)
-        x2_75, y2_75 = get_point_at_distance(x2, y2, x2b, y2, 0.6)
-
-        dt1 = self.distance(x1, y1, x1_75, y1_75)
-        dt2 = self.distance(x2, y2, x2_75, y2_75)
-
-        print(f"distances: {kr_dist}, {kl_dist}, {dt1}, {dt2}")
-
-        # plot the 0.75 distance line
-        self.plot_line(ax, [y1, y2], [x1_75, x2_75], "blue", 1, "--", "Target")
-        
-        # plot line from shoulder to elbow and elbow to end effector
-        rsx = self.kr_df["arm_base_s_x"][data_index]
-        rsy = self.kr_df["arm_base_s_y"][data_index]
-        rex = self.kr_df["elbow_s_x"][data_index]
-        rey = self.kr_df["elbow_s_y"][data_index]
         reex = self.kr_df["ee_s_x"][data_index]
         reey = self.kr_df["ee_s_y"][data_index]
-
-        self.plot_line(ax, [rsy, rey], [rsx, rex], "green", 1, "--", "Right Arm")
-        self.plot_line(ax, [rey, reey], [rex, reex], "green", 1, "--")
-        self.plot_marker(ax, [rsy], [rsx], "black", "o", 100)
-        self.plot_marker(ax, [rey], [rex], "black", "o", 100)
-
-        # plot arrow
-        self.plot_arrow(ax, rsy, rsx, reey - rsy, reex - rsx, "orange")
-
-        lsx = self.kl_df["arm_base_s_x"][data_index]
-        lsy = self.kl_df["arm_base_s_y"][data_index]
-        lex = self.kl_df["elbow_s_x"][data_index]
-        ley = self.kl_df["elbow_s_y"][data_index]
         leex = self.kl_df["ee_s_x"][data_index]
         leey = self.kl_df["ee_s_y"][data_index]
 
-        self.plot_line(ax, [lsy, ley], [lsx, lex], "gray", 1, "--", "Left Arm")
-        self.plot_line(ax, [ley, leey], [lex, leex], "gray", 1, "--")
-        self.plot_marker(ax, [lsy], [lsx], "black", "o", 100)
+        self.plot_line(ax, [reey, leey], [reex, leex], "blue", 2, "-", "Table", legend)
+        self.plot_marker(ax, [reey, leey], [reex, leex], "black", "o", 100)
+
+        rabx = self.kr_df["arm_base_s_x"][data_index]
+        raby = self.kr_df["arm_base_s_y"][data_index]
+        labx = self.kl_df["arm_base_s_x"][data_index]
+        laby = self.kl_df["arm_base_s_y"][data_index]
+
+        if use_odometry:
+            rbase = np.array([rabx, raby, 0])
+            lbase = np.array([labx, laby, 0])
+
+            rbase = self.translate_point_with_odom(rbase)
+            lbase = self.translate_point_with_odom(lbase)
+
+            rabx, raby = rbase[:2]
+            labx, laby = lbase[:2]
+
+        self.plot_line(ax, [raby, laby], [rabx, labx], "red", 2, "-", "Base", legend)
+        self.plot_marker(ax, [raby], [rabx], "black", "o", 100)
+
+        # # find the points of the line that are at 0.75 distance from ee
+        # x1_75, y1_75 = self.get_point_at_distance(reex, reey, rabx, reey, 0.6)
+        # x2_75, y2_75 = self.get_point_at_distance(leex, leey, labx, leey, 0.6)
+
+        # # plot the 0.75 distance line
+        # # self.plot_line(ax, [reey, leey], [x1_75, x2_75], "red", 1, "--", "Target")
+
+        # plot line from shoulder to elbow and elbow to end effector
+        rex = self.kr_df["elbow_s_x"][data_index]
+        rey = self.kr_df["elbow_s_y"][data_index]
+
+        self.plot_line(
+            ax, [raby, rey], [rabx, rex], "green", 1, "--", "Right Arm", legend
+        )
+        self.plot_line(ax, [rey, reey], [rex, reex], "green", 1, "--", legend=legend)
+        self.plot_marker(ax, [raby], [rabx], "black", "o", 100)
+        self.plot_marker(ax, [rey], [rex], "black", "o", 100)
+
+        # if use_odometry:
+        #     rex0 = self.kr_df["elbow_s_x"][0]
+        #     rey0 = self.kr_df["elbow_s_y"][0]
+
+        #     rabx0 = self.kr_df["arm_base_s_x"][0]
+        #     raby0 = self.kr_df["arm_base_s_y"][0]
+
+        #     # fill the area
+        #     x = [rabx0, rabx, rex0, rex]
+        #     y = [raby0, raby, rey0, rey]
+        #     # ax.fill(y, x, "green", alpha=0.15, linewidth=0)
+
+        # # plot arrow
+        # # self.plot_arrow(ax, raby, rabx, reey - raby, reex - rabx, "orange")
+
+        lex = self.kl_df["elbow_s_x"][data_index]
+        ley = self.kl_df["elbow_s_y"][data_index]
+
+        self.plot_line(
+            ax, [laby, ley], [labx, lex], "gray", 1, "--", "Left Arm", legend
+        )
+        self.plot_line(ax, [ley, leey], [lex, leex], "gray", 1, "--", legend=legend)
+        self.plot_marker(ax, [laby], [labx], "black", "o", 100)
         self.plot_marker(ax, [ley], [lex], "black", "o", 100)
 
-        # plot arrow
-        self.plot_arrow(ax, lsy, lsx, leey - lsy, leex - lsx, "orange")
+        # # plot arrow
+        # # self.plot_arrow(ax, laby, labx, leey - laby, leex - labx, "orange")
 
     def plot_uc_data(self, ax: plt.Axes, data_index: int):
-        kl_bl_base_dist = self.uc_df["kl_bl_base_dist"][data_index]
-        kr_br_base_dist = self.uc_df["kr_bl_base_dist"][data_index]
 
-        print(f"dists: {kl_bl_base_dist}, {kr_br_base_dist}")
+        kl_f_x = self.uc_df["kl_bl_base_f_at_base_x"][data_index]
+        kl_f_y = self.uc_df["kl_bl_base_f_at_base_y"][data_index]
+        kr_f_x = self.uc_df["kr_bl_base_f_at_base_x"][data_index]
+        kr_f_y = self.uc_df["kr_bl_base_f_at_base_y"][data_index]
+
+        # normalize the force vectors
+        norm = np.linalg.norm([kl_f_x, kl_f_y])
+        kl_f_x /= norm
+        kl_f_y /= norm
+
+        norm = np.linalg.norm([kr_f_x, kr_f_y])
+        kr_f_x /= norm
+        kr_f_y /= norm
+
+        kl_abx = self.kl_df["arm_base_s_x"][data_index]
+        kl_aby = self.kl_df["arm_base_s_y"][data_index]
+        kr_abx = self.kr_df["arm_base_s_x"][data_index]
+        kr_aby = self.kr_df["arm_base_s_y"][data_index]
+
+        # plot the force vectors
+        self.plot_arrow(ax, kl_aby, kl_abx, kl_f_y / 10, kl_f_x / 10, color=(0.75, 0, 0))
+        self.plot_arrow(ax, kr_aby, kr_abx, kr_f_y / 10, kr_f_x / 10, color=(0, 0.75, 0))
+
+        # add force vectors
+        f_x = kl_f_x + kr_f_x
+        f_y = kl_f_y + kr_f_y
+        center = self.get_base_center(data_index)
+        # color = blue + green
+        self.plot_arrow(ax, center[1], center[0], f_y / 10, f_x / 10, color=(0.75, 0.75, 0.))
+
 
     def plot_base_force_direction(
         self, ax: plt.Axes, data_index: int, center_point: list
@@ -447,7 +500,7 @@ class Plotter:
         mz = self.mb_df["platform_force_z"][data_index]
 
         print(f"force: {fx}, {fy}, {mz}")
-        
+
         norm = np.linalg.norm([fx, fy])
         fx /= norm
         fy /= norm
@@ -464,31 +517,89 @@ class Plotter:
         #     width=0.005,
         # )
 
-        self.plot_arrow(ax, center_point[1], center_point[0], fy/10, fx/10, "red")
+        self.plot_arrow(ax, center_point[1], center_point[0], fy / 10, fx / 10, "red")
 
     def plot_base_odometry(self, ax: plt.Axes):
         odom = self.mb_df.filter(regex="x_platform_x|x_platform_y|x_platform_qz")
 
-        # plot the data
-        sns.lineplot(y=odom["x_platform_x"], x=odom["x_platform_y"], ax=ax)
-        ax.set_xlabel("X Position (m)")
-        ax.set_ylabel("Y Position (m)")
+        sns.lineplot(
+            x=odom["x_platform_y"],
+            y=odom["x_platform_x"],
+            ax=ax,
+            estimator=None,
+            linewidth=1,
+            linestyle="-",
+            color="black",
+            label="Odometry",
+        )
 
-    def plot_base_wheel_coords(self, ax: plt.Axes):
-        for coord in WHEEL_COORDINATES:
-            sns.scatterplot(
-                y=[coord[0]],
-                x=[coord[1]],
-                ax=ax,
-                color="red",
-                s=100,
-                marker="o",
+        # Number of quivers to plot
+        num_quivers = 20
+
+        # Generate evenly spaced indices, excluding the first and last 250 points
+        indices = np.linspace(500, len(odom) - 500 - 1, num_quivers, dtype=int)
+
+        # Select the data points using the generated indices
+        qz_values = odom["x_platform_qz"].iloc[indices]
+        sin_qz = np.sin(qz_values / 2)
+        cos_qz = np.cos(qz_values / 2)
+
+        # Precompute the rotation matrices
+        rotations = R.from_quat(
+            np.column_stack(
+                (np.zeros_like(sin_qz), np.zeros_like(sin_qz), sin_qz, cos_qz)
             )
+        )
+
+        # Precompute the points to be rotated
+        points = np.tile([0.1, 0, 0], (len(rotations), 1))
+
+        # Apply the rotations
+        rotated_points = rotations.apply(points)
+
+        xn = odom["x_platform_x"].iloc[indices]
+        yn = odom["x_platform_y"].iloc[indices]
+
+        ax.quiver(
+            yn,
+            xn,
+            rotated_points[:, 1],
+            rotated_points[:, 0],
+            color="blue",
+            scale=5,
+            scale_units="xy",
+            width=0.0025,
+            alpha=0.75,
+            headlength=4,
+            headaxislength=3.0,
+            headwidth=4,
+        )
+
+        # translate the wheel coordinates based on the odometry last position
+        wheel_coords = np.array(WHEEL_COORDINATES)
+        wheel_coords_with_z = np.hstack((wheel_coords, np.zeros((4, 1))))
+        wheel_coords = np.array(
+            [self.translate_point_with_odom(point) for point in wheel_coords_with_z]
+        )
+
+        # plot the wheel coordinates
+        self.plot_base_wheel_coords(wheel_coords, ax)
+
+    def plot_base_wheel_coords(self, wheel_coords: np.ndarray, ax: plt.Axes):
+        sns.scatterplot(
+            x=wheel_coords[:, 1],
+            y=wheel_coords[:, 0],
+            ax=ax,
+            s=100,
+            color="black",
+            marker="o",
+            label="Wheel",
+        )
 
         # fll the rectangle
-        y = [coord[0] for coord in WHEEL_COORDINATES]
-        x = [coord[1] for coord in WHEEL_COORDINATES]
-        ax.fill(x, y, "gray", alpha=0.25, linewidth=0)
+        y = [coord[0] for coord in wheel_coords]
+        x = [coord[1] for coord in wheel_coords]
+        ax.fill(x, y, "gray", alpha=0.15, linewidth=0)
 
     def save_fig(self, file_name: str):
         assert file_name is not None, "file_name cannot be None"

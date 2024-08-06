@@ -1,4 +1,4 @@
-from plotter import Plotter
+from plotter import Plotter, WHEEL_COORDINATES
 import matplotlib.pyplot as plt
 
 
@@ -25,7 +25,7 @@ class BothArmsPlotter:
         plt.show()
 
     def plot_case_1_estimation_data(self):
-        run_id = "06_08_2024_17_40_56"
+        run_id = "06_08_2024_17_27_15"
         plotter = Plotter(self.run_dir)
         plotter.load_kr_data(run_id)
         plotter.load_kl_data(run_id)
@@ -34,16 +34,24 @@ class BothArmsPlotter:
 
         fig, axs = plotter.create_subplots(1, 1, (15, 15))
 
-        data_index = len(plotter.kr_df) // 2
+        # data_index = len(plotter.kr_df) // 2
+        data_index = 0
         plotter.plot_ee_and_shoulder_lines(axs, data_index)
-        plotter.plot_base_wheel_coords(axs)
-
         center = plotter.get_base_center(data_index)
-        plotter.plot_base_force_direction(axs, data_index, center)
-
+        # plotter.plot_base_force_direction(axs, data_index, center)
         plotter.plot_uc_data(axs, data_index)
 
-        plotter.plot_base_odometry(axs)
+        # data_index = len(plotter.kr_df) - 1
+        # plotter.plot_ee_and_shoulder_lines(
+        #     axs, data_index, use_odometry=True, legend=False
+        # )
+        # center = plotter.get_base_center(data_index)
+        # plotter.plot_base_force_direction(axs, data_index, center)
+        # plotter.plot_uc_data(axs, data_index)
+
+        # plotter.plot_base_wheel_coords(WHEEL_COORDINATES, axs)
+        # plotter.plot_base_odometry(axs)
+        # plotter.plot_ee_and_shoulder_lines_over_time(axs)
 
         # aspect ratio of the plot
         axs.set_aspect("equal")
