@@ -1,9 +1,9 @@
 from plotter import Plotter
 import matplotlib.pyplot as plt
 
+
 class SingleArmPlotter:
     def __init__(self, run_dir: str) -> None:
-
         self.run_dir = run_dir
 
     def plot_case_1(self):
@@ -138,6 +138,7 @@ class SingleArmPlotter:
         plotter.plot_ee_orientation(plotter.kr_df, axs[0][1])
         plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1])
         plt.show()
+
 
 if __name__ == "__main__":
     # create a plotter object
