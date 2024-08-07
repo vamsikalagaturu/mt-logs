@@ -7,12 +7,20 @@ import os
 from scipy.spatial.transform import Rotation as R
 from typing import Tuple
 
-WHEEL_COORDINATES = np.array((
-    [0.188, 0.2075],
-    [-0.188, 0.2075],
-    [-0.188, -0.2075],
-    [0.188, -0.2075],
-))
+from matplotlib.legend_handler import HandlerPatch
+import matplotlib.patches as mpatches
+
+from utils import make_legend_arrow
+
+
+WHEEL_COORDINATES = np.array(
+    (
+        [0.188, 0.2075],
+        [-0.188, 0.2075],
+        [-0.188, -0.2075],
+        [0.188, -0.2075],
+    )
+)
 
 
 class Plotter:
@@ -207,7 +215,7 @@ class Plotter:
         linewidth: int = 1,
         linestyle: str = "-",
         label: str = None,
-        legend: bool = True
+        legend: bool = True,
     ):
         g = sns.lineplot(
             x=x,
@@ -217,8 +225,21 @@ class Plotter:
             linewidth=linewidth,
             linestyle=linestyle,
             color=color,
-            label=label if legend else None,
+            label=label if legend else "",
+            legend=False,
         )
+
+        if legend:
+            handles, labels = ax.get_legend_handles_labels()
+
+            # Update the legend with the combined handles and labels
+            ax.legend(
+                handles,
+                labels,
+                handler_map={
+                    mpatches.FancyArrow: HandlerPatch(patch_func=make_legend_arrow),
+                },
+            )
 
     def plot_line_over_time(
         self,
@@ -306,6 +327,7 @@ class Plotter:
             color=color,
             s=size,
             marker=marker,
+            legend=False,
         )
 
     def plot_arrow(
@@ -319,7 +341,7 @@ class Plotter:
         width: int = 0.0025,
         label: str = None,
     ):
-        ax.arrow(
+        arrow = ax.arrow(
             x,
             y,
             dx,
@@ -333,19 +355,17 @@ class Plotter:
             label=label,
         )
 
-        # ax.annotate(
-        #     "",
-        #     xy=(x + dx, y + dy),
-        #     xytext=(x, y),
-        #     arrowprops=dict(
-        #         arrowstyle="-|>",
-        #         color=color,
-        #         mutation_scale=25,
-        #         connectionstyle="arc3,rad=0",
-        #         fc=color,
-        #         lw=3,
-        #     ),
-        # )
+        # Retrieve existing legend handles and labels
+        handles, labels = ax.get_legend_handles_labels()
+
+        # Update the legend with the combined handles and labels
+        ax.legend(
+            handles,
+            labels,
+            handler_map={
+                mpatches.FancyArrow: HandlerPatch(patch_func=make_legend_arrow),
+            },
+        )
 
     def get_base_center(self, data_index: int):
         x1 = self.kr_df["arm_base_s_x"][data_index]
@@ -386,6 +406,8 @@ class Plotter:
         data_index: int,
         use_odometry: bool = False,
         legend: bool = True,
+        colors: dict = None,
+        linewidths: dict = None,
     ):
         # draw the line between the xy position of the given dataframes
         reex = self.kr_df["ee_s_x"][data_index]
@@ -393,7 +415,26 @@ class Plotter:
         leex = self.kl_df["ee_s_x"][data_index]
         leey = self.kl_df["ee_s_y"][data_index]
 
-        self.plot_line(ax, [reey, leey], [reex, leex], "blue", 2, "-", "Table", legend)
+        if use_odometry:
+            ree = np.array([reex, reey, 0])
+            lee = np.array([leex, leey, 0])
+
+            ree = self.translate_point_with_odom(ree)
+            lee = self.translate_point_with_odom(lee)
+
+            reex, reey = ree[:2]
+            leex, leey = lee[:2]
+
+        self.plot_line(
+            ax,
+            [reey, leey],
+            [reex, leex],
+            colors["table"],
+            linewidths["table"],
+            "-",
+            "Table",
+            legend,
+        )
         self.plot_marker(ax, [reey, leey], [reex, leex], "darkgray", "o", 100)
 
         rabx = self.kr_df["arm_base_s_x"][data_index]
@@ -411,30 +452,55 @@ class Plotter:
             rabx, raby = rbase[:2]
             labx, laby = lbase[:2]
 
-        self.plot_line(ax, [raby, laby], [rabx, labx], "red", 2, "-", "Base", legend)
+        self.plot_line(
+            ax,
+            [raby, laby],
+            [rabx, labx],
+            colors["mb"],
+            linewidths["mb"],
+            "-",
+            "Base",
+            legend,
+        )
         self.plot_marker(ax, [raby], [rabx], "darkgray", "o", 100)
 
         # print dist bw ee and shoulders
         kr_ee_s_dist = self.distance(reex, reey, rabx, raby)
         kl_ee_s_dist = self.distance(leex, leey, labx, laby)
 
-        print(f"dists: kl- {kl_ee_s_dist}, kr- {kr_ee_s_dist}")
-
         # # find the points of the line that are at 0.75 distance from ee
         # x1_75, y1_75 = self.get_point_at_distance(reex, reey, rabx, reey, 0.6)
         # x2_75, y2_75 = self.get_point_at_distance(leex, leey, labx, leey, 0.6)
 
         # # plot the 0.75 distance line
-        # # self.plot_line(ax, [reey, leey], [x1_75, x2_75], "red", 1, "--", "Target")
+        # self.plot_line(ax, [reey, leey], [x1_75, x2_75], "red", 1, "--", "Target")
 
         # plot line from shoulder to elbow and elbow to end effector
         rex = self.kr_df["elbow_s_x"][data_index]
         rey = self.kr_df["elbow_s_y"][data_index]
 
+        if use_odometry:
+            rex, rey = self.translate_point_with_odom([rex, rey])[:2]
+
         self.plot_line(
-            ax, [raby, rey], [rabx, rex], "green", 1, "--", "Right Arm", legend
+            ax,
+            [raby, rey],
+            [rabx, rex],
+            colors["kr"],
+            linewidths["kr"],
+            "--",
+            "Right Arm",
+            legend,
         )
-        self.plot_line(ax, [rey, reey], [rex, reex], "green", 1, "--", legend=legend)
+        self.plot_line(
+            ax,
+            [rey, reey],
+            [rex, reex],
+            colors["kr"],
+            linewidths["kr"],
+            "--",
+            legend=legend,
+        )
         self.plot_marker(ax, [raby], [rabx], "darkgray", "o", 100)
         self.plot_marker(ax, [rey], [rex], "darkgray", "o", 100)
 
@@ -446,25 +512,43 @@ class Plotter:
         #     raby0 = self.kr_df["arm_base_s_y"][0]
 
         #     # fill the area
-        #     x = [rabx0, rabx, rex0, rex]
-        #     y = [raby0, raby, rey0, rey]
-        #     # ax.fill(y, x, "green", alpha=0.15, linewidth=0)
+        #     x = [rabx0, rex0,  rex, rabx]
+        #     y = [raby0, rey0,  rey, raby]
+        # ax.fill(y, x, "green", alpha=0.15, linewidth=0)
 
-        # # plot arrow
-        # # self.plot_arrow(ax, raby, rabx, reey - raby, reex - rabx, "orange")
+        # plot arrow
+        # self.plot_arrow(ax, raby, rabx, reey - raby, reex - rabx, "orange")
 
         lex = self.kl_df["elbow_s_x"][data_index]
         ley = self.kl_df["elbow_s_y"][data_index]
 
+        if use_odometry:
+            lex, ley = self.translate_point_with_odom([lex, ley])[:2]
+
         self.plot_line(
-            ax, [laby, ley], [labx, lex], "gray", 1, "--", "Left Arm", legend
+            ax,
+            [laby, ley],
+            [labx, lex],
+            colors["kl"],
+            linewidths["kl"],
+            "--",
+            "Left Arm",
+            legend,
         )
-        self.plot_line(ax, [ley, leey], [lex, leex], "gray", 1, "--", legend=legend)
+        self.plot_line(
+            ax,
+            [ley, leey],
+            [lex, leex],
+            colors["kl"],
+            linewidths["kl"],
+            "--",
+            legend=legend,
+        )
         self.plot_marker(ax, [laby], [labx], "darkgray", "o", 100)
         self.plot_marker(ax, [ley], [lex], "darkgray", "o", 100)
 
-        # # plot arrow
-        # # self.plot_arrow(ax, laby, labx, leey - laby, leex - labx, "orange")
+        # plot arrow
+        # self.plot_arrow(ax, laby, labx, leey - laby, leex - labx, "orange")
 
     def plot_uc_data(self, ax: plt.Axes, data_index: int):
 
@@ -488,22 +572,46 @@ class Plotter:
         kr_aby = self.kr_df["arm_base_s_y"][data_index]
 
         # plot the force vectors
-        self.plot_arrow(ax, kl_aby, kl_abx, kl_f_y / 10, kl_f_x / 10, color=(0.75, 0, 0), label="Left Arm Force Vector")
-        self.plot_arrow(ax, kr_aby, kr_abx, kr_f_y / 10, kr_f_x / 10, color=(0, 0.75, 0), label="Right Arm Force Vector")
+        self.plot_arrow(
+            ax,
+            kl_aby,
+            kl_abx,
+            kl_f_y / 10,
+            kl_f_x / 10,
+            color=(0.75, 0, 0),
+            label="Left Arm Force Vector",
+        )
+        self.plot_arrow(
+            ax,
+            kr_aby,
+            kr_abx,
+            kr_f_y / 10,
+            kr_f_x / 10,
+            color=(0, 0.75, 0),
+            label="Right Arm Force Vector",
+        )
 
         # add force vectors
         f_x = kl_f_x + kr_f_x
         f_y = kl_f_y + kr_f_y
         center = self.get_base_center(data_index)
         # color = blue + green
-        self.plot_arrow(ax, center[1], center[0], f_y / 10, f_x / 10, color=(0.75, 0.75, 0.), label="Total Force Vector at Base")
+        self.plot_arrow(
+            ax,
+            center[1],
+            center[0],
+            f_y / 10,
+            f_x / 10,
+            color=(0.75, 0.75, 0.0),
+            label="Total Force Vector at Base",
+        )
 
     def plot_uc2_data(self, ax: plt.Axes, data_index: int):
 
-        kl_f_x = self.uc_df["kl_bl_base_f_dir_z"][data_index]
+        kl_f_x = -self.uc_df["kl_bl_base_f_dir_z"][data_index]
         kl_f_y = self.uc_df["kl_bl_base_f_dir_x"][data_index]
-        kr_f_x = self.uc_df["kr_bl_base_f_dir_z"][data_index]
-        kr_f_y = self.uc_df["kl_bl_base_f_dir_x"][data_index]
+        kr_f_x = -self.uc_df["kr_bl_base_f_dir_z"][data_index]
+        kr_f_y = -self.uc_df["kl_bl_base_f_dir_x"][data_index]
 
         # normalize the force vectors
         norm = np.linalg.norm([kl_f_x, kl_f_y])
@@ -520,18 +628,54 @@ class Plotter:
         kr_aby = self.kr_df["ee_s_y"][data_index]
 
         # plot the force vectors
-        self.plot_arrow(ax, kl_aby, kl_abx, kl_f_y / 10, kl_f_x / 10, color=(0.75, 0, 0), label="Left Arm Force Vector")
-        self.plot_arrow(ax, kr_aby, kr_abx, kr_f_y / 10, kr_f_x / 10, color=(0, 0.75, 0), label="Right Arm Force Vector")
+        self.plot_arrow(
+            ax,
+            kl_aby,
+            kl_abx,
+            kl_f_y / 10,
+            kl_f_x / 10,
+            color=(0.75, 0, 0),
+            label="Left Arm Force Vector",
+        )
+        self.plot_arrow(
+            ax,
+            kr_aby,
+            kr_abx,
+            kr_f_y / 10,
+            kr_f_x / 10,
+            color=(0, 0.75, 0),
+            label="Right Arm Force Vector",
+        )
+
+        kl_f_bx = self.uc_df["kl_bl_base_f_at_base_x"][data_index]
+        kl_f_by = self.uc_df["kl_bl_base_f_at_base_y"][data_index]
+        kr_f_bx = self.uc_df["kr_bl_base_f_at_base_x"][data_index]
+        kr_f_by = self.uc_df["kr_bl_base_f_at_base_y"][data_index]
+
+        # normalize the force vectors
+        norm = np.linalg.norm([kl_f_bx, kl_f_by])
+        kl_f_bx /= norm
+        kl_f_by /= norm
+
+        norm = np.linalg.norm([kr_f_bx, kr_f_by])
+        kr_f_bx /= norm
+        kr_f_by /= norm
 
         # add force vectors
-        f_x = kl_f_x + kr_f_x
-        f_y = kl_f_y + kr_f_y
+        f_x = kl_f_bx + kr_f_bx
+        f_y = kl_f_by + kr_f_by
 
-        print(f"force: {f_x}, {f_y}")
-        
         center = self.get_base_center(data_index)
         # color = blue + green
-        self.plot_arrow(ax, center[1], center[0], f_y / 10, f_x / 10, color=(0.75, 0.75, 0.), label="Total Force Vector at Base")
+        self.plot_arrow(
+            ax,
+            center[1],
+            center[0],
+            f_y / 10,
+            f_x / 10,
+            color=(0.75, 0.75, 0.0),
+            label="Total Force Vector at Base",
+        )
 
     def plot_base_force_direction(
         self, ax: plt.Axes, data_index: int, center_point: list
@@ -561,21 +705,12 @@ class Plotter:
 
         self.plot_arrow(ax, center_point[1], center_point[0], fy / 10, fx / 10, "red")
 
-    def plot_base_odometry(self, ax: plt.Axes):
+    def plot_base_odometry(self, ax: plt.Axes, colors: dict):
         odom = self.mb_df.filter(regex="x_platform_x|x_platform_y|x_platform_qz")
 
-        # sns.lineplot(
-        #     x=odom["x_platform_y"],
-        #     y=odom["x_platform_x"],
-        #     ax=ax,
-        #     estimator=None,
-        #     linewidth=1,
-        #     linestyle="-",
-        #     color="black",
-        #     label="Odometry",
-        # )
-
-        ax.plot(odom["x_platform_y"], odom["x_platform_x"], label="Odometry", color="black")
+        ax.plot(
+            odom["x_platform_y"], odom["x_platform_x"], label="Odometry", color="black"
+        )
 
         # Number of quivers to plot
         num_quivers = 20
@@ -604,20 +739,20 @@ class Plotter:
         xn = odom["x_platform_x"].iloc[indices]
         yn = odom["x_platform_y"].iloc[indices]
 
-        # ax.quiver(
-        #     yn,
-        #     xn,
-        #     -rotated_points[:, 1],
-        #     -rotated_points[:, 0],
-        #     color="blue",
-        #     scale=5,
-        #     scale_units="xy",
-        #     width=0.0025,
-        #     alpha=0.75,
-        #     headlength=4,
-        #     headaxislength=3.0,
-        #     headwidth=4,
-        # )
+        ax.quiver(
+            yn,
+            xn,
+            -rotated_points[:, 1],
+            -rotated_points[:, 0],
+            color="blue",
+            scale=5,
+            scale_units="xy",
+            width=0.0025,
+            alpha=0.75,
+            headlength=4,
+            headaxislength=3.0,
+            headwidth=4,
+        )
 
         # translate the wheel coordinates based on the odometry last position
         wheel_coords = np.array(WHEEL_COORDINATES)
@@ -627,9 +762,13 @@ class Plotter:
         )
 
         # plot the wheel coordinates
-        self.plot_base_wheel_coords(wheel_coords, ax)
+        self.plot_base_wheel_coords(wheel_coords, ax, colors["base"])
+        # plot the pivot directions
+        self.plot_wheel_pivot_directions(ax, len(odom) - 1, wheel_coords, colors["pivot"])
 
-    def plot_base_wheel_coords(self, wheel_coords: np.ndarray, ax: plt.Axes):
+    def plot_base_wheel_coords(
+        self, wheel_coords: np.ndarray, ax: plt.Axes, color: list | str, label: str = ""
+    ):
         sns.scatterplot(
             x=wheel_coords[:, 1],
             y=wheel_coords[:, 0],
@@ -637,23 +776,49 @@ class Plotter:
             s=100,
             color="black",
             marker="o",
-            label="Wheel",
+            label=label,
         )
 
         # fll the rectangle
         y = [coord[0] for coord in wheel_coords]
         x = [coord[1] for coord in wheel_coords]
-        ax.fill(x, y, "gray", alpha=0.15, linewidth=0)
+        ax.fill(x, y, color=color, linewidth=0, alpha=0.25)
+
+    def plot_wheel_pivot_directions(
+        self, ax: plt.Axes, data_index: int, wheel_coords: np.ndarray, color="blue"
+    ):
+        pivot_1234 = self.mb_df.filter(
+            regex="pivot_1|pivot_2|pivot_3|pivot_4|pivot_5"
+        ).iloc[data_index]
+
+        # pivot angle: 0 to 2pi
+        pivot_1234 = pivot_1234.to_numpy()
+        pivot_1234 = pivot_1234[0:4]
+
+        # plot the pivot directions for each wheel
+        for i, pivot in enumerate(pivot_1234):
+            # get the wheel coordinates
+            wheel = wheel_coords[i]
+
+            # get the pivot direction
+            direction = np.array([np.cos(pivot), np.sin(pivot), 0])
+
+            # plot the pivot direction
+            self.plot_arrow(
+                ax, wheel[1], wheel[0], direction[1] / 20, direction[0] / 20, color
+            )
 
     def save_fig(self, file_name: str):
         assert file_name is not None, "file_name cannot be None"
 
         # copy the readme.md file to the save directory
         readme_path = os.path.join(
-            self.current_dir, self.data_dir, self.run_dir, "readme.md"
+            self.current_dir, self.data_dir, self.run_dir, self.run_id, "readme.md"
         )
         save_path = os.path.join(self.current_dir, self.save_dir, self.run_id)
         os.makedirs(save_path, exist_ok=True)
+
+        plt.tight_layout()
         plt.savefig(os.path.join(save_path, f"{file_name}.png"))
 
         # copy the readme.md file to the save directory
