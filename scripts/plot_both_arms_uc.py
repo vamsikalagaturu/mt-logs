@@ -25,7 +25,7 @@ class BothArmsPlotter:
         plt.show()
 
     def plot_case_1_estimation_data(self):
-        run_id = "06_08_2024_17_27_15"
+        run_id = "07_08_2024_15_51_14"
         plotter = Plotter(self.run_dir)
         plotter.load_kr_data(run_id)
         plotter.load_kl_data(run_id)
@@ -39,7 +39,7 @@ class BothArmsPlotter:
         plotter.plot_ee_and_shoulder_lines(axs, data_index)
         center = plotter.get_base_center(data_index)
         # plotter.plot_base_force_direction(axs, data_index, center)
-        plotter.plot_uc_data(axs, data_index)
+        plotter.plot_uc2_data(axs, data_index)
 
         # data_index = len(plotter.kr_df) - 1
         # plotter.plot_ee_and_shoulder_lines(
@@ -50,7 +50,7 @@ class BothArmsPlotter:
         # plotter.plot_uc_data(axs, data_index)
 
         # plotter.plot_base_wheel_coords(WHEEL_COORDINATES, axs)
-        # plotter.plot_base_odometry(axs)
+        plotter.plot_base_odometry(axs)
         # plotter.plot_ee_and_shoulder_lines_over_time(axs)
 
         # aspect ratio of the plot
@@ -61,7 +61,7 @@ class BothArmsPlotter:
 
 
 if __name__ == "__main__":
-    run_dir = "freddy_uc1_log_both_arms_test"
+    run_dir = "freddy_uc2_align_log"
     both_arms_plotter = BothArmsPlotter(run_dir)
     # both_arms_plotter.plot_case_1_arms_data()
     both_arms_plotter.plot_case_1_estimation_data()

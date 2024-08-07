@@ -317,6 +317,7 @@ class Plotter:
         dy: float,
         color: str = "black",
         width: int = 0.0025,
+        label: str = None,
     ):
         ax.arrow(
             x,
@@ -329,6 +330,7 @@ class Plotter:
             head_width=0.02,
             head_length=0.02,
             linewidth=1.5,
+            label=label,
         )
 
         # ax.annotate(
@@ -392,7 +394,7 @@ class Plotter:
         leey = self.kl_df["ee_s_y"][data_index]
 
         self.plot_line(ax, [reey, leey], [reex, leex], "blue", 2, "-", "Table", legend)
-        self.plot_marker(ax, [reey, leey], [reex, leex], "black", "o", 100)
+        self.plot_marker(ax, [reey, leey], [reex, leex], "darkgray", "o", 100)
 
         rabx = self.kr_df["arm_base_s_x"][data_index]
         raby = self.kr_df["arm_base_s_y"][data_index]
@@ -410,7 +412,13 @@ class Plotter:
             labx, laby = lbase[:2]
 
         self.plot_line(ax, [raby, laby], [rabx, labx], "red", 2, "-", "Base", legend)
-        self.plot_marker(ax, [raby], [rabx], "black", "o", 100)
+        self.plot_marker(ax, [raby], [rabx], "darkgray", "o", 100)
+
+        # print dist bw ee and shoulders
+        kr_ee_s_dist = self.distance(reex, reey, rabx, raby)
+        kl_ee_s_dist = self.distance(leex, leey, labx, laby)
+
+        print(f"dists: kl- {kl_ee_s_dist}, kr- {kr_ee_s_dist}")
 
         # # find the points of the line that are at 0.75 distance from ee
         # x1_75, y1_75 = self.get_point_at_distance(reex, reey, rabx, reey, 0.6)
@@ -427,8 +435,8 @@ class Plotter:
             ax, [raby, rey], [rabx, rex], "green", 1, "--", "Right Arm", legend
         )
         self.plot_line(ax, [rey, reey], [rex, reex], "green", 1, "--", legend=legend)
-        self.plot_marker(ax, [raby], [rabx], "black", "o", 100)
-        self.plot_marker(ax, [rey], [rex], "black", "o", 100)
+        self.plot_marker(ax, [raby], [rabx], "darkgray", "o", 100)
+        self.plot_marker(ax, [rey], [rex], "darkgray", "o", 100)
 
         # if use_odometry:
         #     rex0 = self.kr_df["elbow_s_x"][0]
@@ -452,8 +460,8 @@ class Plotter:
             ax, [laby, ley], [labx, lex], "gray", 1, "--", "Left Arm", legend
         )
         self.plot_line(ax, [ley, leey], [lex, leex], "gray", 1, "--", legend=legend)
-        self.plot_marker(ax, [laby], [labx], "black", "o", 100)
-        self.plot_marker(ax, [ley], [lex], "black", "o", 100)
+        self.plot_marker(ax, [laby], [labx], "darkgray", "o", 100)
+        self.plot_marker(ax, [ley], [lex], "darkgray", "o", 100)
 
         # # plot arrow
         # # self.plot_arrow(ax, laby, labx, leey - laby, leex - labx, "orange")
@@ -480,16 +488,50 @@ class Plotter:
         kr_aby = self.kr_df["arm_base_s_y"][data_index]
 
         # plot the force vectors
-        self.plot_arrow(ax, kl_aby, kl_abx, kl_f_y / 10, kl_f_x / 10, color=(0.75, 0, 0))
-        self.plot_arrow(ax, kr_aby, kr_abx, kr_f_y / 10, kr_f_x / 10, color=(0, 0.75, 0))
+        self.plot_arrow(ax, kl_aby, kl_abx, kl_f_y / 10, kl_f_x / 10, color=(0.75, 0, 0), label="Left Arm Force Vector")
+        self.plot_arrow(ax, kr_aby, kr_abx, kr_f_y / 10, kr_f_x / 10, color=(0, 0.75, 0), label="Right Arm Force Vector")
 
         # add force vectors
         f_x = kl_f_x + kr_f_x
         f_y = kl_f_y + kr_f_y
         center = self.get_base_center(data_index)
         # color = blue + green
-        self.plot_arrow(ax, center[1], center[0], f_y / 10, f_x / 10, color=(0.75, 0.75, 0.))
+        self.plot_arrow(ax, center[1], center[0], f_y / 10, f_x / 10, color=(0.75, 0.75, 0.), label="Total Force Vector at Base")
 
+    def plot_uc2_data(self, ax: plt.Axes, data_index: int):
+
+        kl_f_x = self.uc_df["kl_bl_base_f_dir_z"][data_index]
+        kl_f_y = self.uc_df["kl_bl_base_f_dir_x"][data_index]
+        kr_f_x = self.uc_df["kr_bl_base_f_dir_z"][data_index]
+        kr_f_y = self.uc_df["kl_bl_base_f_dir_x"][data_index]
+
+        # normalize the force vectors
+        norm = np.linalg.norm([kl_f_x, kl_f_y])
+        kl_f_x /= norm
+        kl_f_y /= norm
+
+        norm = np.linalg.norm([kr_f_x, kr_f_y])
+        kr_f_x /= norm
+        kr_f_y /= norm
+
+        kl_abx = self.kl_df["ee_s_x"][data_index]
+        kl_aby = self.kl_df["ee_s_y"][data_index]
+        kr_abx = self.kr_df["ee_s_x"][data_index]
+        kr_aby = self.kr_df["ee_s_y"][data_index]
+
+        # plot the force vectors
+        self.plot_arrow(ax, kl_aby, kl_abx, kl_f_y / 10, kl_f_x / 10, color=(0.75, 0, 0), label="Left Arm Force Vector")
+        self.plot_arrow(ax, kr_aby, kr_abx, kr_f_y / 10, kr_f_x / 10, color=(0, 0.75, 0), label="Right Arm Force Vector")
+
+        # add force vectors
+        f_x = kl_f_x + kr_f_x
+        f_y = kl_f_y + kr_f_y
+
+        print(f"force: {f_x}, {f_y}")
+        
+        center = self.get_base_center(data_index)
+        # color = blue + green
+        self.plot_arrow(ax, center[1], center[0], f_y / 10, f_x / 10, color=(0.75, 0.75, 0.), label="Total Force Vector at Base")
 
     def plot_base_force_direction(
         self, ax: plt.Axes, data_index: int, center_point: list
@@ -522,22 +564,24 @@ class Plotter:
     def plot_base_odometry(self, ax: plt.Axes):
         odom = self.mb_df.filter(regex="x_platform_x|x_platform_y|x_platform_qz")
 
-        sns.lineplot(
-            x=odom["x_platform_y"],
-            y=odom["x_platform_x"],
-            ax=ax,
-            estimator=None,
-            linewidth=1,
-            linestyle="-",
-            color="black",
-            label="Odometry",
-        )
+        # sns.lineplot(
+        #     x=odom["x_platform_y"],
+        #     y=odom["x_platform_x"],
+        #     ax=ax,
+        #     estimator=None,
+        #     linewidth=1,
+        #     linestyle="-",
+        #     color="black",
+        #     label="Odometry",
+        # )
+
+        ax.plot(odom["x_platform_y"], odom["x_platform_x"], label="Odometry", color="black")
 
         # Number of quivers to plot
         num_quivers = 20
 
         # Generate evenly spaced indices, excluding the first and last 250 points
-        indices = np.linspace(500, len(odom) - 500 - 1, num_quivers, dtype=int)
+        indices = np.linspace(0, len(odom) - 1, num_quivers, dtype=int)
 
         # Select the data points using the generated indices
         qz_values = odom["x_platform_qz"].iloc[indices]
@@ -547,7 +591,7 @@ class Plotter:
         # Precompute the rotation matrices
         rotations = R.from_quat(
             np.column_stack(
-                (np.zeros_like(sin_qz), np.zeros_like(sin_qz), sin_qz, cos_qz)
+                (np.zeros_like(sin_qz), np.zeros_like(sin_qz), cos_qz, sin_qz)
             )
         )
 
@@ -560,20 +604,20 @@ class Plotter:
         xn = odom["x_platform_x"].iloc[indices]
         yn = odom["x_platform_y"].iloc[indices]
 
-        ax.quiver(
-            yn,
-            xn,
-            rotated_points[:, 1],
-            rotated_points[:, 0],
-            color="blue",
-            scale=5,
-            scale_units="xy",
-            width=0.0025,
-            alpha=0.75,
-            headlength=4,
-            headaxislength=3.0,
-            headwidth=4,
-        )
+        # ax.quiver(
+        #     yn,
+        #     xn,
+        #     -rotated_points[:, 1],
+        #     -rotated_points[:, 0],
+        #     color="blue",
+        #     scale=5,
+        #     scale_units="xy",
+        #     width=0.0025,
+        #     alpha=0.75,
+        #     headlength=4,
+        #     headaxislength=3.0,
+        #     headwidth=4,
+        # )
 
         # translate the wheel coordinates based on the odometry last position
         wheel_coords = np.array(WHEEL_COORDINATES)
