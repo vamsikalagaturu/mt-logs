@@ -26,7 +26,9 @@ class BothArmsPlotter:
         plt.show()
 
     def plot_case_1_estimation_data(self):
-        run_id = "09_08_2024_20_33_38"
+        # run_id = "09_08_2024_18_48_50" # going back
+        # 09_08_2024_19_48_02 # going forward
+        # 09_08_2024_20_33_38 # sideways
         plotter = Plotter(self.run_dir)
         plotter.load_data(run_id)
 

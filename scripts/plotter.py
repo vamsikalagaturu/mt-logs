@@ -92,22 +92,28 @@ class Plotter:
         elbow_ax: plt.Axes,
         ee_ax: plt.Axes,
         arm: str = "right",
+        prefix: str = "",
     ):
         # get the data
         elbow_z = arm_df[["elbow_s_z"]]
         ee_z = arm_df[["ee_s_z"]]
         x = np.arange(len(arm_df)) / 1000
 
+        prefix1, prefix2 = prefix.split(",") if prefix else (None, None)
+
+        prefix1 = f"({prefix1}) " if prefix1 else ""
+        prefix2 = f"({prefix2}) " if prefix2 else ""
+
         sns.lineplot(x=x, y=elbow_z["elbow_s_z"], label=f"{arm}_elbow_s_z", ax=elbow_ax)
         elbow_ax.set_xlabel("Time (s)")
         elbow_ax.set_ylabel("Position (m)")
-        elbow_ax.set_title("Elbow Z Position")
+        elbow_ax.set_title(f"{prefix1}Elbow Z Position")
         elbow_ax.legend()
 
-        sns.lineplot(x=x, y=ee_z["ee_s_z"], label="ee_s_z", ax=ee_ax)
+        sns.lineplot(x=x, y=ee_z["ee_s_z"], label=f"{arm}_ee_s_z", ax=ee_ax)
         ee_ax.set_xlabel("Time (s)")
         ee_ax.set_ylabel("Position (m)")
-        ee_ax.set_title("End Effector Z Position")
+        ee_ax.set_title(f"{prefix2}End Effector Z Position")
         ee_ax.legend()
 
     def plot_elbow_z_command_force(
@@ -134,6 +140,7 @@ class Plotter:
         arm_df: pd.DataFrame,
         ax: plt.Axes,
         arm: str = "right",
+        prefix: str = "",
     ):
         # get the data
         qw = arm_df[["ee_s_qw"]]
@@ -144,11 +151,12 @@ class Plotter:
         angles = np.degrees(angles)
 
         # plot the data
-        sns.lineplot(x=x, y=angles["ee_s_qw"], label=f"{arm}_ee_s_qw", ax=ax)
+        sns.lineplot(x=x, y=angles["ee_s_qw"], label=f"2*arccos({arm}_ee_s_qw)", ax=ax)
 
+        prefix = f"({prefix}) " if prefix else ""
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Angle (degrees)")
-        ax.set_title("End Effector Orientation")
+        ax.set_title(f"{prefix}End Effector Change in Orientation")
         ax.legend()
 
     def plot_arm_trajectory(
@@ -157,6 +165,7 @@ class Plotter:
         ax: plt.Axes,
         coord="xz",
         arm: str = "right",
+        prefix: str = "",
     ):
 
         coord_data = {
@@ -183,9 +192,10 @@ class Plotter:
         #     scatter_kws={"s": 1},
         #     line_kws={"color": "red"},
         # )
+        prefix = f"({prefix}) " if prefix else ""
         ax.set_xlabel(f'{coord_data[coord][0].split("_")[-1].upper()} Position (m)')
         ax.set_ylabel(f'{coord_data[coord][1].split("_")[-1].upper()} Position (m)')
-        ax.set_title("End Effector Trajectory")
+        ax.set_title(f"{prefix}End Effector Trajectory")
         ax.legend()
 
     def plot_3d_arm_trajectory(self, arm_df: pd.DataFrame):
@@ -808,7 +818,7 @@ class Plotter:
                 ax, wheel[1], wheel[0], direction[1] / 20, direction[0] / 20, color
             )
 
-    def save_fig(self, file_name: str):
+    def save_fig(self, file_name: str, title: str = None):
         assert file_name is not None, "file_name cannot be None"
 
         # copy the readme.md file to the save directory
@@ -817,6 +827,9 @@ class Plotter:
         )
         save_path = os.path.join(self.current_dir, self.save_dir, self.run_id)
         os.makedirs(save_path, exist_ok=True)
+
+        if title is not None:
+            plt.suptitle(title)
 
         plt.tight_layout()
         plt.savefig(os.path.join(save_path, f"{file_name}.png"))

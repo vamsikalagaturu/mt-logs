@@ -37,9 +37,9 @@ class SingleArmPlotter:
 
         # plot the elbow and end effector z position
         fig, axs = plotter.create_subplots(2, 2, (15, 15))
-        plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0])
-        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1])
-        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1])
+        plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0], prefix="a")
+        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1], prefix="a")
+        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1], prefix="c,d")
         plt.show()
 
     def plot_case_2(self):
@@ -49,10 +49,13 @@ class SingleArmPlotter:
 
         # plot the elbow and end effector z position
         fig, axs = plotter.create_subplots(2, 2, (15, 15))
-        plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0])
-        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1])
-        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1])
-        plt.show()
+        plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0], prefix="a")
+        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1], prefix="b")
+        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1], prefix="c,d")
+        # plt.show()
+        plotter.save_fig("ms1_sa", 
+        "Motion Specification for Single Arm\n \
+        Feed-forward Force Control and Position Control")
 
     def plot_case_3(self):
         run_id = "05_08_2024_14_40_32"
@@ -61,10 +64,13 @@ class SingleArmPlotter:
 
         # plot the elbow and end effector z position
         fig, axs = plotter.create_subplots(2, 2, (15, 15))
-        plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0], coord="xy")
-        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1])
-        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1])
-        plt.show()
+        plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0], coord="xy", prefix="a")
+        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1], prefix="b")
+        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1], prefix="c,d")
+        # plt.show()
+        plotter.save_fig("ms2_sa",
+        "Motion Specification for Single Arm\n \
+        EE Feed-forward Force Control and Position Control & Elbow Distance Control")
 
     def plot_case_4(self):
         run_id = "05_08_2024_15_17_21"
@@ -73,10 +79,13 @@ class SingleArmPlotter:
 
         # plot the elbow and end effector z position
         fig, axs = plotter.create_subplots(2, 2, (15, 15))
-        plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0])
-        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1])
-        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1])
-        plt.show()
+        plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0], coord="xy", prefix="a")
+        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1], prefix="b")
+        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1], prefix="c,d")
+        # plt.show()
+        plotter.save_fig("ms3_sa",
+        "Motion Specification for Single Arm\n \
+        EE Feed-forward Force Control and Position Control in Linear Y and Z & Elbow Distance Control")
 
     def plot_case_5(self):
         run_id = "05_08_2024_15_28_58"
@@ -133,11 +142,15 @@ class SingleArmPlotter:
 
         # plot the elbow and end effector z position
         fig, axs = plotter.create_subplots(2, 2, (15, 15))
-        # plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0], coord="xy")
-        plotter.plot_elbow_z_command_force(plotter.kr_df, axs[0][0])
-        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1])
-        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1])
-        plt.show()
+        plotter.plot_arm_trajectory(plotter.kr_df, axs[0][0], coord="xy", prefix="a")
+        # plotter.plot_elbow_z_command_force(plotter.kr_df, axs[0][0])
+        plotter.plot_ee_orientation(plotter.kr_df, axs[0][1], prefix="b")
+        plotter.plot_elbow_and_ee_z(plotter.kr_df, axs[1][0], axs[1][1], prefix="c,d")
+        # plt.show()
+        plotter.save_fig("ms4_sa",
+        "Motion Specification for Single Arm\n \
+        EE Feed-forward Force Control, Position Control in Linear Y and Z, and Orientation Control & \n \
+        Elbow Distance Control")
 
 
 if __name__ == "__main__":
@@ -153,4 +166,4 @@ if __name__ == "__main__":
     # plotter.plot_case_6()
     # plotter.plot_case_7()
     # plotter.plot_case_8()
-    # plotter.plot_case_9()
+    plotter.plot_case_9()
