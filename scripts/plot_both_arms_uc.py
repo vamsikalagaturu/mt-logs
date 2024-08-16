@@ -98,7 +98,7 @@ class BothArmsPlotter:
         axs[1].xaxis.label.set_fontsize(20)
         axs[1].yaxis.label.set_fontsize(20)
 
-        # # axis tick font size
+        # axis tick font size
         axs[0].tick_params(axis="both", which="major", labelsize=20)
         axs[1].tick_params(axis="both", which="major", labelsize=20)
 
@@ -158,6 +158,34 @@ class BothArmsPlotter:
         )
 
     def plot_base_force(self):
+        run_id = "09_08_2024_20_33_38"  # going back
+        # run_id = ""
+        plotter2 = Plotter(self.run_dir)
+        plotter2.load_uc_data(run_id)
+        plotter2.load_mb_data(run_id)
+
+        fig, axs = plotter2.create_subplots(1, 1, (15, 15))
+
+        data_index = len(plotter2.mb_df) - 1
+        plotter2.plot_base_force(axs, data_index, COLORS["initial"])
+
+        axs.legend(loc="lower right", fontsize=20)
+
+        # axis x, y label font size
+        axs.xaxis.label.set_fontsize(20)
+        axs.yaxis.label.set_fontsize(20)
+
+        # axis tick font size
+        axs.tick_params(axis="both", which="major", labelsize=20)
+
+        plt.show()
+        # plotter2.save_fig(
+        #     "uc1_base_force_pivot_alignment_working",
+        #     "Base force and pivot alignment control\n",
+        #     25,
+        # )
+
+    def plot_base_force_and_pivot(self):
         # run_id = "09_08_2024_18_48_50"  # going back
         run_id = "09_08_2024_16_22_25" # wheel alignment
         # run_id = ""
@@ -196,5 +224,5 @@ if __name__ == "__main__":
     run_dir = "freddy_uc1_log"
     both_arms_plotter = BothArmsPlotter(run_dir)
     # both_arms_plotter.plot_case_1_arms_data()
-    both_arms_plotter.plot_case_1_estimation_data()
-    # both_arms_plotter.plot_base_force()
+    # both_arms_plotter.plot_case_1_estimation_data()
+    both_arms_plotter.plot_base_force()

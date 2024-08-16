@@ -485,7 +485,7 @@ class Plotter:
         kr_ee_s_dist = self.distance(reex, reey, rabx, raby)
         kl_ee_s_dist = self.distance(leex, leey, labx, laby)
 
-        print(f"kr_ee_s_dist: {kr_ee_s_dist}, kl_ee_s_dist: {kl_ee_s_dist}")
+        # print(f"kr_ee_s_dist: {kr_ee_s_dist}, kl_ee_s_dist: {kl_ee_s_dist}")
 
         sp_dist = self.uc_df["dist_sp"][0]
 
@@ -628,7 +628,12 @@ class Plotter:
             label="Right Arm Force Vector",
         )
 
-    def plot_uc2_data(self, ax: plt.Axes, data_index: int):
+    def plot_uc2_data(self,
+        ax: plt.Axes,
+        data_index: int,
+        colors: dict = None,
+        use_odometry: bool = False,
+    ):
 
         kl_f_x = -self.uc_df["kl_bl_base_f_dir_z"][data_index]
         kl_f_y = self.uc_df["kl_bl_base_f_dir_x"][data_index]
@@ -649,6 +654,16 @@ class Plotter:
         kr_abx = self.kr_df["ee_s_x"][data_index]
         kr_aby = self.kr_df["ee_s_y"][data_index]
 
+        if use_odometry:
+            kl_ab = np.array([kl_abx, kl_aby, 0])
+            kr_ab = np.array([kr_abx, kr_aby, 0])
+
+            kl_ab = self.translate_point_with_odom(kl_ab, data_index)
+            kr_ab = self.translate_point_with_odom(kr_ab, data_index)
+
+            kl_abx, kl_aby = kl_ab[:2]
+            kr_abx, kr_aby = kr_ab[:2]
+
         # plot the force vectors
         self.plot_arrow(
             ax,
@@ -656,7 +671,7 @@ class Plotter:
             kl_abx,
             kl_f_y / 10,
             kl_f_x / 10,
-            color=(0.75, 0, 0),
+            color=colors["kl_f"],
             label="Left Arm Force Vector",
         )
         self.plot_arrow(
@@ -665,7 +680,7 @@ class Plotter:
             kr_abx,
             kr_f_y / 10,
             kr_f_x / 10,
-            color=(0, 0.75, 0),
+            color=colors["kr_f"],
             label="Right Arm Force Vector",
         )
 
@@ -674,20 +689,27 @@ class Plotter:
         kr_f_bx = self.uc_df["kr_bl_base_f_at_base_x"][data_index]
         kr_f_by = self.uc_df["kr_bl_base_f_at_base_y"][data_index]
 
-        # normalize the force vectors
-        norm = np.linalg.norm([kl_f_bx, kl_f_by])
-        kl_f_bx /= norm
-        kl_f_by /= norm
+        # Standardization for kl
+        mean_kl = np.mean([kl_f_bx, kl_f_by])
+        std_kl = np.std([kl_f_bx, kl_f_by])
+        kl_f_bx = (kl_f_bx - mean_kl) / std_kl
+        kl_f_by = (kl_f_by - mean_kl) / std_kl
 
-        norm = np.linalg.norm([kr_f_bx, kr_f_by])
-        kr_f_bx /= norm
-        kr_f_by /= norm
+        # Standardization for kr
+        mean_kr = np.mean([kr_f_bx, kr_f_by])
+        std_kr = np.std([kr_f_bx, kr_f_by])
+        kr_f_bx = (kr_f_bx - mean_kr) / std_kr
+        kr_f_by = (kr_f_by - mean_kr) / std_kr
 
         # add force vectors
         f_x = kl_f_bx + kr_f_bx
         f_y = kl_f_by + kr_f_by
 
-        center = self.get_base_center(data_index)
+        center = self.get_base_shoulder_center(data_index)
+
+        if use_odometry:
+            center = self.translate_point_with_odom(center, data_index)
+
         # color = blue + green
         self.plot_arrow(
             ax,
@@ -695,8 +717,8 @@ class Plotter:
             center[0],
             f_y / 10,
             f_x / 10,
-            color=(0.75, 0.75, 0.0),
-            label="Total Force Vector at Base",
+            color=colors["base_f"],
+            label="Resulting Force Vector at Base",
         )
 
     def plot_base_force_direction(
@@ -738,13 +760,14 @@ class Plotter:
 
     def plot_base_force(self, ax: plt.Axes, data_index: int, colors: dict):
         # get the data
-        fx = self.mb_df["platform_force_x"][0:data_index]
-        fy = self.mb_df["platform_force_y"][0:data_index]
-        mz = self.mb_df["platform_force_z"][0:data_index]
+        fx = self.mb_df["platform_force_x"][2750:]
+        fy = self.mb_df["platform_force_y"][2750:]
+        mz = self.mb_df["platform_force_z"][2750:]
 
         # plot the data fx
         x = np.arange(len(fx)) / 1000
         ax.plot(x, fx, label="Base Force Linear X")
+        ax.plot(x, fy, label="Base Force Linear Y")
 
         ax.legend()
 
@@ -860,8 +883,8 @@ class Plotter:
             # get the wheel coordinates
             wheel = wheel_coords[i]
 
-            if data_index == 0:
-                pivot = pivot + np.pi
+            # if data_index == 0:
+            #     pivot = pivot + np.pi
 
             # get the pivot direction
             direction = np.array([np.cos(pivot), np.sin(pivot), 0])
@@ -882,7 +905,7 @@ class Plotter:
     def plot_pivot_direction(self, ax: plt.Axes, pivot: float):
         pivot_1234 = self.mb_df.filter(
             regex="pivot_1|pivot_2|pivot_3|pivot_4|pivot_5"
-        )
+        )[2750:]
         x = np.arange(len(pivot_1234)) / 1000
         ax.plot(x, pivot_1234["pivot_1"], label="Pivot 1")
         ax.plot(x, pivot_1234["pivot_2"], label="Pivot 2")
