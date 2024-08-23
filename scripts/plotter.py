@@ -760,9 +760,9 @@ class Plotter:
 
     def plot_base_force(self, ax: plt.Axes, data_index: int, colors: dict):
         # get the data
-        fx = self.mb_df["platform_force_x"][2750:]
-        fy = self.mb_df["platform_force_y"][2750:]
-        mz = self.mb_df["platform_force_z"][2750:]
+        fx = self.mb_df["platform_force_x"]
+        fy = self.mb_df["platform_force_y"]
+        mz = self.mb_df["platform_force_z"]
 
         # plot the data fx
         x = np.arange(len(fx)) / 1000
@@ -775,6 +775,21 @@ class Plotter:
         ax.set_ylabel("Force (N)")
         ax.set_title("(a) Base Force", fontsize=20)
 
+    def plot_ee_force(self, ax: plt.Axes, data_index: int, colors: dict):
+        # get the data
+        kr_f_mag = self.uc_df["kr_bl_base_f_mag"]
+        kl_f_mag = self.uc_df["kl_bl_base_f_mag"]
+
+        # plot the data
+        x = np.arange(len(kr_f_mag)) / 1000
+        ax.plot(x, kr_f_mag, label="Right Arm Force Magnitude")
+        ax.plot(x, kl_f_mag, label="Left Arm Force Magnitude")
+
+        ax.legend()
+
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Force (N)")
+        ax.set_title("(b) End Effector Force Magnitude", fontsize=20)
 
     def plot_base_odometry(self, ax: plt.Axes, colors: dict, data_index: int):
         odom = self.mb_df.filter(regex="x_platform_x|x_platform_y|x_platform_qz")[
@@ -905,7 +920,7 @@ class Plotter:
     def plot_pivot_direction(self, ax: plt.Axes, pivot: float):
         pivot_1234 = self.mb_df.filter(
             regex="pivot_1|pivot_2|pivot_3|pivot_4|pivot_5"
-        )[2750:]
+        )
         x = np.arange(len(pivot_1234)) / 1000
         ax.plot(x, pivot_1234["pivot_1"], label="Pivot 1")
         ax.plot(x, pivot_1234["pivot_2"], label="Pivot 2")

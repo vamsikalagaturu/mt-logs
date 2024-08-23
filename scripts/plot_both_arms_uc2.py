@@ -147,9 +147,16 @@ class BothArmsPlotter:
         # run_id = "07_08_2024_14_24_08"
         # run_id = "07_08_2024_14_30_50"
         # run_id = "07_08_2024_14_32_27"
-        run_id = "07_08_2024_14_34_21"
+        # run_id = "07_08_2024_14_34_21"
         # run_id = "07_08_2024_14_42_53"
         # run_id = "07_08_2024_14_47_22"
+
+        # run_id = "23_08_2024_17_32_39" # manual without alignment
+        # run_id = "23_08_2024_17_47_15" # manual with alignment
+        # run_id = "23_08_2024_17_57_45"
+        # run_id = "23_08_2024_18_05_06"
+
+        run_id = "23_08_2024_18_17_38"
 
         plotter2 = Plotter(self.run_dir)
         plotter2.load_uc_data(run_id)
@@ -158,7 +165,8 @@ class BothArmsPlotter:
         fig, axs = plotter2.create_subplots(1, 2, (30, 15))
 
         data_index = len(plotter2.mb_df) - 1
-        plotter2.plot_base_force(axs[0], data_index, COLORS["initial"])
+        # plotter2.plot_base_force(axs[0], data_index, COLORS["initial"])
+        plotter2.plot_ee_force(axs[0], data_index, COLORS["initial"])
         plotter2.plot_pivot_direction(axs[1], 1)
 
         axs[0].legend(loc="lower right", fontsize=20)
@@ -174,16 +182,16 @@ class BothArmsPlotter:
         axs[0].tick_params(axis="both", which="major", labelsize=20)
         axs[1].tick_params(axis="both", which="major", labelsize=20)
 
-        # plt.show()
-        plotter2.save_fig(
-            "uc2_manual_force",
-            "Use Case 2: Testing manually by exerting pushing/pulling force on the end-effectors",
-            25,
-        )
+        plt.show()
+        # plotter2.save_fig(
+        #     "uc2_manual_force",
+        #     "Use Case 2: Testing manually by exerting pushing/pulling force on the end-effectors",
+        #     25,
+        # )
 
 
 if __name__ == "__main__":
-    run_dir = "freddy_uc2_align_log"
+    run_dir = "freddy_uc2_log"
     both_arms_plotter = BothArmsPlotter(run_dir)
-    both_arms_plotter.plot_pushing_back_data()
-    # both_arms_plotter.plot_base_force_and_pivot()
+    # both_arms_plotter.plot_pushing_back_data()
+    both_arms_plotter.plot_base_force_and_pivot()
