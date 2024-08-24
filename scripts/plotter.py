@@ -116,6 +116,17 @@ class Plotter:
         ee_ax.set_title(f"{prefix2}End Effector Z Position")
         ee_ax.legend()
 
+    def plot_ee_z(self, arm_df: pd.DataFrame, ax: plt.Axes, arm: str = "right"):
+        # get the data
+        ee_z = arm_df[["ee_s_z"]]
+        x = np.arange(len(arm_df)) / 1000
+
+        # plot the data
+        sns.lineplot(x=x, y=ee_z["ee_s_z"], label=f"{arm}_ee_s_z", ax=ax)
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Position (m)")
+        ax.legend()
+
     def plot_elbow_z_command_force(
         self,
         arm_df: pd.DataFrame,
@@ -773,12 +784,12 @@ class Plotter:
 
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Force (N)")
-        ax.set_title("(a) Base Force", fontsize=20)
+        ax.set_title("(a) Base Force", fontsize=25)
 
     def plot_ee_force(self, ax: plt.Axes, data_index: int, colors: dict):
         # get the data
-        kr_f_mag = self.uc_df["kr_bl_base_f_mag"]
-        kl_f_mag = self.uc_df["kl_bl_base_f_mag"]
+        kr_f_mag = self.uc_df["kr_bl_base_f_mag"][200:]
+        kl_f_mag = self.uc_df["kl_bl_base_f_mag"][200:]
 
         # plot the data
         x = np.arange(len(kr_f_mag)) / 1000
@@ -789,7 +800,7 @@ class Plotter:
 
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Force (N)")
-        ax.set_title("(b) End Effector Force Magnitude", fontsize=20)
+        ax.set_title("(b) End Effector Force Magnitude", fontsize=25)
 
     def plot_base_odometry(self, ax: plt.Axes, colors: dict, data_index: int):
         odom = self.mb_df.filter(regex="x_platform_x|x_platform_y|x_platform_qz")[
@@ -920,7 +931,7 @@ class Plotter:
     def plot_pivot_direction(self, ax: plt.Axes, pivot: float):
         pivot_1234 = self.mb_df.filter(
             regex="pivot_1|pivot_2|pivot_3|pivot_4|pivot_5"
-        )
+        )[200:]
         x = np.arange(len(pivot_1234)) / 1000
         ax.plot(x, pivot_1234["pivot_1"], label="Pivot 1")
         ax.plot(x, pivot_1234["pivot_2"], label="Pivot 2")
@@ -932,7 +943,7 @@ class Plotter:
 
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Pivot Angle (rad)')
-        ax.set_title('(b) Pivot Direction', fontsize=20)
+        ax.set_title('(b) Pivot Direction', fontsize=25)
 
 
     def save_fig(self, file_name: str, title: str = None, fontsize: int = 12):
@@ -947,6 +958,9 @@ class Plotter:
 
         if title is not None:
             plt.suptitle(title, fontsize=fontsize)
+        else:
+            # remove title
+            plt.suptitle("")
 
         plt.tight_layout()
         plt.savefig(os.path.join(save_path, f"{file_name}.png"))

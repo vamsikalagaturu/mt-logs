@@ -154,9 +154,7 @@ class BothArmsPlotter:
         # run_id = "23_08_2024_17_32_39" # manual without alignment
         # run_id = "23_08_2024_17_47_15" # manual with alignment
         # run_id = "23_08_2024_17_57_45"
-        # run_id = "23_08_2024_18_05_06"
-
-        run_id = "23_08_2024_18_17_38"
+        run_id = "23_08_2024_18_05_06"
 
         plotter2 = Plotter(self.run_dir)
         plotter2.load_uc_data(run_id)
@@ -182,12 +180,10 @@ class BothArmsPlotter:
         axs[0].tick_params(axis="both", which="major", labelsize=20)
         axs[1].tick_params(axis="both", which="major", labelsize=20)
 
-        plt.show()
-        # plotter2.save_fig(
-        #     "uc2_manual_force",
-        #     "Use Case 2: Testing manually by exerting pushing/pulling force on the end-effectors",
-        #     25,
-        # )
+        # plt.show()
+        plotter2.save_fig(
+            "uc2_manual_force_with_alignment"
+        )
 
 
 if __name__ == "__main__":
