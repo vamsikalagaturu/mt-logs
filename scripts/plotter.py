@@ -127,6 +127,17 @@ class Plotter:
         ax.set_ylabel("Position (m)")
         ax.legend()
 
+    def plot_elbow_z(self, arm_df: pd.DataFrame, ax: plt.Axes, arm: str = "right"):
+        # get the data
+        elbow_z = arm_df[["elbow_s_z"]]
+        x = np.arange(len(arm_df)) / 1000
+
+        # plot the data
+        sns.lineplot(x=x, y=elbow_z["elbow_s_z"], label=f"{arm}_elbow_s_z", ax=ax)
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Position (m)")
+        ax.legend()
+
     def plot_elbow_z_command_force(
         self,
         arm_df: pd.DataFrame,

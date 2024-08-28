@@ -187,6 +187,23 @@ class SingleArmPlotter:
         # plt.show()
         plotter.save_fig("gravity_comp", None)
 
+    def plot_elbow_z(self):
+        run_id = "23_08_2024_18_54_44"
+        plotter = Plotter(self.run_dir)
+        plotter.load_kr_data(run_id)
+
+        # plot the end effector z position
+        fig, axs = plotter.create_subplots(1, 1, (15, 15))
+        plotter.plot_elbow_z(plotter.kr_df, axs)
+
+        axs.legend(loc="lower right", fontsize=40)
+        axs.xaxis.label.set_fontsize(40)
+        axs.yaxis.label.set_fontsize(40)
+        axs.tick_params(axis="both", which="major", labelsize=40)
+
+        # plt.show()
+        plotter.save_fig("elbow_spring", None)
+
 if __name__ == "__main__":
     # create a plotter object
     plotter = SingleArmPlotter("freddy_uc1_log_arm_test")
@@ -201,5 +218,6 @@ if __name__ == "__main__":
     # plotter.plot_case_7()
     # plotter.plot_case_8()
     # plotter.plot_case_9()
-    plotter.plot_no_gravity_comp()
-    plotter.plot_gravity_comp()
+    # plotter.plot_no_gravity_comp()
+    # plotter.plot_gravity_comp()
+    plotter.plot_elbow_z()
