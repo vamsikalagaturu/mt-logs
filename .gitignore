@@ -2,3 +2,5 @@ data_old/
 plots_old/
 
 __pycache__/
+
+.vscode/
