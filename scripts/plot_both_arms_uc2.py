@@ -1,5 +1,7 @@
-from plotter import Plotter, WHEEL_COORDINATES
+import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+from plotter import Plotter, WHEEL_COORDINATES, math_formatter
 from utils import COLORS, LWS
 
 from matplotlib.legend_handler import HandlerPatch
@@ -135,13 +137,13 @@ class BothArmsPlotter:
         #     "Use Case 2: Alignment by pushing the table with both arms",
         #     25,
         # )
-        # plotter.save_fig("uc2_pulling_forward",
-        # "Use Case 2: Alignment by pulling the table with both arms", 25)
-        plotter.save_fig(
-            "uc2_sideways",
-            "Use Case 2: Alignment by pushing/pulling the table with both arms to result in sideways motion",
-            25,
-        )
+        plotter.save_fig("uc2_pulling_forward",
+        "Use Case 2: Alignment by pulling the table with both arms", 25)
+        # plotter.save_fig(
+        #     "uc2_sideways",
+        #     "Use Case 2: Alignment by pushing/pulling the table with both arms to result in sideways motion",
+        #     25,
+        # )
 
     def plot_base_force_and_pivot(self):
         # run_id = "07_08_2024_14_24_08"
@@ -180,14 +182,85 @@ class BothArmsPlotter:
         axs[0].tick_params(axis="both", which="major", labelsize=20)
         axs[1].tick_params(axis="both", which="major", labelsize=20)
 
+        plt.show()
+        # plotter2.save_fig(
+            # "uc2_manual_force_with_alignment"
+        # )
+
+    def plot_force_ts(self):
+        run_id = "07_08_2024_14_42_53"  # pushing back
+
+        plotter = Plotter(self.run_dir)
+        plotter.load_data(run_id)
+
+        fig = plt.figure(figsize=(8, 4))
+        
+        axs = fig.add_subplot(121)
+        axs2 = fig.add_subplot(122)
+
+        plotter.plot_ee_force_ts(axs, COLORS["initial"])
+        axs.xaxis.set_major_formatter(FuncFormatter(math_formatter))
+        axs.yaxis.set_major_formatter(FuncFormatter(math_formatter))
+        axs.set_xlabel('Time [s]')
+        axs.set_ylabel('Force [N]')
+        axs.xaxis.set_ticks(np.arange(0, 4, 1))
+        axs.yaxis.set_ticks(np.arange(-60, 5, 20))
+        axs.set_aspect("auto")
+        axs.xaxis.label.set_fontsize(20)
+        axs.yaxis.label.set_fontsize(20)
+        axs.tick_params(axis="both", which="major", labelsize=20)
+        axs.legend(loc="lower right", fontsize=22)
+
+        plotter.plot_dist_ts(axs2, COLORS["initial"])
+        axs2.set_xlabel('Time [s]')
+        axs2.set_ylabel('Distance [cm]')
+        axs2.xaxis.set_major_formatter(FuncFormatter(math_formatter))
+        axs2.yaxis.set_major_formatter(FuncFormatter(math_formatter))
+        axs2.xaxis.set_ticks(np.arange(0, 4, 1))
+        axs2.yaxis.set_ticks(np.arange(60, 76, 5))
+        axs2.set_aspect("auto")
+        axs2.xaxis.label.set_fontsize(20)
+        axs2.yaxis.label.set_fontsize(20)
+        axs2.tick_params(axis="both", which="major", labelsize=20)
+        axs2.legend(loc="lower right", fontsize=19)
+
+        plt.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
+
         # plt.show()
-        plotter2.save_fig(
-            "uc2_manual_force_with_alignment"
-        )
+        plotter.save_fig("uc2_pushing_back_ts")
+
+        # plotter.save_fig("uc2_pushing_back_force_ts")
+
+    # def plot_ee_s_dist_ts(self):
+    #     run_id = "07_08_2024_14_42_53"  # pushing back
+
+    #     plotter = Plotter(self.run_dir)
+    #     plotter.load_data(run_id)
+
+    #     fig, axs = plotter.create_subplots(1, 1, (17, 17))
+
+
+
+        # # axs.legend(loc="lower right", fontsize=60)
+
+        # # axs.xaxis.label.set_fontsize(75)
+        # # axs.yaxis.label.set_fontsize(75)
+
+
+        # # axs.tick_params(axis="both", which="major", labelsize=75)
+
+        # sns grid linewidth
+        # axs.grid(linewidth=5)
+
+        # plt.tight_layout()
+
+        # plotter.save_fig("uc2_pushing_back_dist_ts")
 
 
 if __name__ == "__main__":
-    run_dir = "freddy_uc2_log"
+    run_dir = "freddy_uc2_align_log"
     both_arms_plotter = BothArmsPlotter(run_dir)
     # both_arms_plotter.plot_pushing_back_data()
-    both_arms_plotter.plot_base_force_and_pivot()
+    # both_arms_plotter.plot_base_force_and_pivot()
+    both_arms_plotter.plot_force_ts()
+    # both_arms_plotter.plot_ee_s_dist_ts()

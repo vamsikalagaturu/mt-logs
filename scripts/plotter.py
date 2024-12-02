@@ -1,6 +1,6 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.axes
+from matplotlib import rc
 import pandas as pd
 import numpy as np
 import os
@@ -12,6 +12,17 @@ import matplotlib.patches as mpatches
 
 from utils import make_legend_arrow
 
+rc("grid", c="0.0", ls=":", lw=0.6)
+rc("xtick", top=True, bottom=True, direction="in")
+rc("ytick", left=True, right=True, direction="in")
+rc("axes", linewidth=1.5)
+rc("xtick.major", pad=7.0)
+rc("ytick.major", pad=7.0)
+
+
+def math_formatter(x, pos):
+    return "%i" % x
+
 
 WHEEL_COORDINATES = np.array(
     (
@@ -21,6 +32,18 @@ WHEEL_COORDINATES = np.array(
         [0.188, -0.2075],
     )
 )
+
+gcolors = {
+    "blue": "#377eb8",
+    "orange": "#ff7f00",
+    "green": "#4daf4a",
+    "pink": "#f781bf",
+    "brown": "#a65628",
+    "purple": "#984ea3",
+    "gray": "#999999",
+    "red": "#e41a1c",
+    "yellow": "#dede00",
+}
 
 
 class Plotter:
@@ -37,6 +60,20 @@ class Plotter:
         self.uc_file = "uc_log.csv"
 
         self.run_id = None
+
+        plt.rcParams.update(
+            {
+                "text.usetex": True,
+                "font.family": "sans-serif",
+                "font.sans-serif": "Helvetica",
+                "font.size": 12,
+                "text.latex.preamble": [
+                    r"\usepackage{helvet}",
+                    r"\usepackage{sansmath}",
+                    r"\sansmath",
+                ],
+            }
+        )
 
         self.set_sns_props()
 
@@ -76,8 +113,7 @@ class Plotter:
         self.run_id = run_id
 
     def set_sns_props(self):
-        sns.set_theme(style="darkgrid")
-        # sns.set_context("talk")
+        sns.set_theme(style="whitegrid")
         sns.set_palette("deep")
 
     def create_subplots(
@@ -189,7 +225,6 @@ class Plotter:
         arm: str = "right",
         prefix: str = "",
     ):
-
         coord_data = {
             "xy": ["ee_s_x", "ee_s_y"],
             "xz": ["ee_s_x", "ee_s_z"],
@@ -221,7 +256,6 @@ class Plotter:
         ax.legend()
 
     def plot_3d_arm_trajectory(self, arm_df: pd.DataFrame):
-
         # get the data
         ee_xyz = arm_df[["ee_s_x", "ee_s_y", "ee_s_z"]]
         ee_xyz = ee_xyz.to_numpy()
@@ -284,7 +318,6 @@ class Plotter:
         linewidth: int = 1,
         linestyle: str = "-",
     ):
-
         # flatten the data
         x1 = x1s.to_list()
         y1 = y1s.to_list()
@@ -447,6 +480,7 @@ class Plotter:
         legend: bool = True,
         colors: dict = None,
         linewidths: dict = None,
+        only_shoulders: bool = False,
     ):
         # draw the line between the xy position of the given dataframes
         reex = self.kr_df["ee_s_x"][data_index]
@@ -464,17 +498,18 @@ class Plotter:
             reex, reey = ree[:2]
             leex, leey = lee[:2]
 
-        self.plot_line(
-            ax,
-            [reey, leey],
-            [reex, leex],
-            colors["table"],
-            linewidths["table"],
-            "-",
-            "Table",
-            legend,
-        )
-        self.plot_marker(ax, [reey, leey], [reex, leex], "darkgray", "o", 100)
+        if not only_shoulders:
+            self.plot_line(
+                ax,
+                [reey, leey],
+                [reex, leex],
+                colors["table"],
+                linewidths["table"],
+                "-",
+                "Table",
+                legend,
+            )
+            self.plot_marker(ax, [reey, leey], [reex, leex], "darkgray", "o", 100)
 
         rabx = self.kr_df["arm_base_s_x"][data_index]
         raby = self.kr_df["arm_base_s_y"][data_index]
@@ -498,9 +533,13 @@ class Plotter:
             colors["mb"],
             linewidths["mb"],
             "-",
-            "Base",
+            "Shoulders",
             legend,
         )
+
+        if only_shoulders:
+            return
+
         self.plot_marker(ax, [raby], [rabx], "darkgray", "o", 100)
 
         # print dist bw ee and shoulders
@@ -599,8 +638,8 @@ class Plotter:
         data_index: int,
         colors: dict = None,
         use_odometry: bool = False,
+        legend: bool = True,
     ):
-
         kl_f_x = self.uc_df["kl_bl_base_f_at_base_x"][data_index]
         kl_f_y = self.uc_df["kl_bl_base_f_at_base_y"][data_index]
         kr_f_x = self.uc_df["kr_bl_base_f_at_base_x"][data_index]
@@ -638,7 +677,8 @@ class Plotter:
             kl_f_y / 10,
             kl_f_x / 10,
             color=colors["kl_f"],
-            label="Left Arm Force Vector",
+            label="Left Arm Force Vector" if legend else None,
+            update_legend=legend,
         )
         self.plot_arrow(
             ax,
@@ -647,16 +687,17 @@ class Plotter:
             kr_f_y / 10,
             kr_f_x / 10,
             color=colors["kr_f"],
-            label="Right Arm Force Vector",
+            label="Right Arm Force Vector" if legend else None,
+            update_legend=legend,
         )
 
-    def plot_uc2_data(self,
+    def plot_uc2_data(
+        self,
         ax: plt.Axes,
         data_index: int,
         colors: dict = None,
         use_odometry: bool = False,
     ):
-
         kl_f_x = -self.uc_df["kl_bl_base_f_dir_z"][data_index]
         kl_f_y = self.uc_df["kl_bl_base_f_dir_x"][data_index]
         kr_f_x = -self.uc_df["kr_bl_base_f_dir_z"][data_index]
@@ -744,7 +785,13 @@ class Plotter:
         )
 
     def plot_base_force_direction(
-        self, ax: plt.Axes, data_index: int, center_point: list, colors: dict
+        self,
+        ax: plt.Axes,
+        data_index: int,
+        center_point: list,
+        colors: dict,
+        legend: bool = True,
+        final=False,
     ):
         # mark the center
         sns.scatterplot(
@@ -756,7 +803,7 @@ class Plotter:
             marker="o",
             linewidth=1,
             edgecolor="black",
-            label="Base Center",
+            label="Base Center" if legend else "",
         )
 
         # get the data
@@ -770,15 +817,16 @@ class Plotter:
         fx /= norm
         fy /= norm
 
-        self.plot_arrow(
-            ax,
-            center_point[1],
-            center_point[0],
-            fy / 10,
-            fx / 10,
-            color=colors["base_f"],
-            label="Base Force Vector",
-        )
+        if not final:
+            self.plot_arrow(
+                ax,
+                center_point[1],
+                center_point[0],
+                fy / 10,
+                fx / 10,
+                color=colors["base_f"],
+                label="Base Force Vector" if legend else "",
+            )
 
     def plot_base_force(self, ax: plt.Axes, data_index: int, colors: dict):
         # get the data
@@ -797,6 +845,104 @@ class Plotter:
         ax.set_ylabel("Force (N)")
         ax.set_title("(a) Base Force", fontsize=25)
 
+    def plot_base_force_ts(self, ax: plt.Axes, colors: dict, window_size: int = 50):
+        # get the data
+        fr = self.uc_df["kr_bl_base_f_mag"]
+        fl = self.uc_df["kl_bl_base_f_mag"]
+
+        # add left and right forces to get the total force
+        f = fr + fl
+
+        # Calculate the moving average (simple smoothing)
+        f_smooth = f.rolling(window=window_size).mean()
+
+        x = np.arange(len(f)) / 1000  # Time in seconds
+
+        # Plot the original data with a transparent alpha
+        # ax.plot(x, f, color="red", alpha=0.2, label=r"$|F_{base}|$")
+
+        # plot the smoothed data
+        ax.plot(
+            x,
+            f_smooth,
+            label=r"$\mathopen|\mathbf{F_{b}}\mathclose|$",
+            color=gcolors["purple"],
+            linewidth=5,
+        )
+
+    def plot_base_force_wrt_world_ts(self, ax: plt.Axes, colors: dict, window_size: int = 50):
+
+        fx = self.mb_df["platform_force_x"]
+        fy = self.mb_df["platform_force_y"]
+        mz = self.mb_df["platform_force_z"]
+
+        # transform the force values to the world frame using odom
+        ox = self.mb_df["x_platform_x"]
+        oy = self.mb_df["x_platform_y"]
+        oqz = self.mb_df["x_platform_qz"]
+
+        f_transformed = []
+        for i in range(len(fx)):
+            r = R.from_quat([0, 0, np.sin(oqz[i] / 2), np.cos(oqz[i] / 2)])
+            f = np.array([fx[i], fy[i], 0])
+            f = r.apply(f)
+            f_transformed.append(f)
+
+        f_transformed = np.array(f_transformed)
+
+        # lin_f_mag = np.linalg.norm(f_transformed[:, :2], axis=1)
+        # lin_f_mag = pd.Series(lin_f_mag)
+
+        # # Calculate the moving average (simple smoothing)
+        # lin_f_mag_smooth = lin_f_mag.rolling(window=window_size).mean()
+        
+        fx_smooth = pd.Series(f_transformed[:, 0]).rolling(window=window_size).mean()
+        fy_smooth = pd.Series(f_transformed[:, 1]).rolling(window=window_size).mean()
+        m_z_smooth = mz.rolling(window=window_size).mean()
+
+        x = np.arange(len(fx_smooth)) / 1000  # Time in seconds
+
+        # ax.plot(
+        #     x,
+        #     lin_f_mag_smooth,
+        #     label=r"$\mathopen|\mathbf{F_{b_{xy}}}\mathclose|$",
+        #     color=gcolors["purple"],
+        #     linewidth=5,
+        # )
+
+        # plot x and y forces
+        sns.lineplot(
+            x=x,
+            y=fx_smooth,
+            ax=ax,
+            color=gcolors["purple"],
+            label=r"$\mathbf{F_{b_{x}}}$",
+            linewidth=5,
+        )
+
+        sns.lineplot(
+            x=x,
+            y=fy_smooth,
+            ax=ax,
+            color=gcolors["red"],
+            label=r"$\mathbf{F_{b_{y}}}$",
+            linewidth=5,
+        )
+
+        # plot torque on different scale on the right
+        ax2 = ax.twinx()
+        ax2.plot(
+            x,
+            m_z_smooth,
+            label=r"$\mathbf{M_{z}}$",
+            color=gcolors["green"],
+            linewidth=5,
+        )
+
+        ax2.set_ylabel("Torque (Nm)")
+        ax2.yaxis.label.set_fontsize(20)
+        ax2.tick_params(axis="both", which="major", labelsize=20)
+
     def plot_ee_force(self, ax: plt.Axes, data_index: int, colors: dict):
         # get the data
         kr_f_mag = self.uc_df["kr_bl_base_f_mag"][200:]
@@ -813,14 +959,108 @@ class Plotter:
         ax.set_ylabel("Force (N)")
         ax.set_title("(b) End Effector Force Magnitude", fontsize=25)
 
+    def plot_ee_force_ts(self, ax: plt.Axes, colors: dict, window_size: int = 50):
+        # get the data
+        kr_f_mag = self.uc_df["kr_bl_base_f_mag"]
+        kl_f_mag = self.uc_df["kl_bl_base_f_mag"]
+
+        # Calculate the moving average (simple smoothing)
+        kr_f_mag_smooth = kr_f_mag.rolling(window=window_size).mean()
+        kl_f_mag_smooth = kl_f_mag.rolling(window=window_size).mean()
+
+        x = np.arange(len(kr_f_mag)) / 1000  # Time in seconds
+
+        # Plot the original data with a transparent alpha
+        # ax.plot(x, kr_f_mag, color=colors.get("right_ee", "blue"), alpha=0.2)
+        # ax.plot(x, kl_f_mag, color=colors.get("left_ee", "red"), alpha=0.2)
+
+        # sns.lineplot(
+        #     x=x, y=kr_f_mag, ax=ax, color=colors.get("right_ee", "blue"), alpha=0.2
+        # )
+        # sns.lineplot(
+        #     x=x, y=kl_f_mag, ax=ax, color=colors.get("left_ee", "red"), alpha=0.2
+        # )
+
+        # plot the smoothed data
+        # ax.plot(
+        #     x,
+        #     kr_f_mag_smooth,
+        #     label=r"$|F_{right\_ee}|$",
+        #     color=colors.get("right_ee", "blue"),
+        # )
+        # ax.plot(
+        #     x,
+        #     kl_f_mag_smooth,
+        #     label=r"$|F_{left\_ee}|$",
+        #     color=colors.get("left_ee", "red"),
+        # )
+
+        sns.lineplot(
+            x=x,
+            y=kr_f_mag_smooth,
+            ax=ax,
+            color=gcolors["blue"],
+            label=r"$\mathopen|\mathbf{F_{ee}}\mathclose|_\mathbf{r}$",
+            linewidth=5,
+        )
+        sns.lineplot(
+            x=x,
+            y=kl_f_mag_smooth,
+            ax=ax,
+            color=gcolors["pink"],
+            label=r"$\mathopen|\mathbf{F_{ee}}\mathclose|_\mathbf{l}$",
+            linewidth=5,
+        )
+
+        ax.legend()
+
+    def plot_dist_ts(self, ax: plt.Axes, colors: dict, window_size: int = 50):
+        # get the data
+        kr_ee_s_dist = self.uc_df["kr_bl_base_dist"]
+        kl_ee_s_dist = self.uc_df["kl_bl_base_dist"]
+
+        # convert m to cm
+        kr_ee_s_dist *= 100
+        kl_ee_s_dist *= 100
+
+        dist_sp = self.uc_df["dist_sp"] * 100
+
+        x = np.arange(len(kr_ee_s_dist)) / 1000  # Time in seconds
+
+        # Plot the original data with a transparent alpha
+        sns.lineplot(
+            x=x,
+            y=kr_ee_s_dist,
+            ax=ax,
+            label=r"$\mathbf{d}_{\mathbf{r}}$",
+            color=gcolors["blue"],
+            linewidth=5,
+        )
+        sns.lineplot(
+            x=x,
+            y=kl_ee_s_dist,
+            ax=ax,
+            label=r"$\mathbf{d}_{\mathbf{l}}$",
+            color=gcolors["pink"],
+            linewidth=5,
+        )
+
+        # plot the setpoint
+        sns.lineplot(
+            x=x,
+            y=dist_sp,
+            ax=ax,
+            label=r"$\mathbf{d}_{\mathbf{sp}}$",
+            color=gcolors["green"],
+            linewidth=5,
+        )
+
     def plot_base_odometry(self, ax: plt.Axes, colors: dict, data_index: int):
         odom = self.mb_df.filter(regex="x_platform_x|x_platform_y|x_platform_qz")[
             0:data_index
         ]
 
-        ax.plot(
-            odom["x_platform_y"], odom["x_platform_x"], label="Odometry", color="black"
-        )
+        ax.plot(odom["x_platform_y"], odom["x_platform_x"], color="blue")
 
         # Number of quivers to plot
         num_quivers = 10
@@ -875,19 +1115,21 @@ class Plotter:
         )
 
         # plot the wheel coordinates
-        self.plot_base_wheel_coords(wheel_coords, ax, colors["base"])
+        self.plot_base_wheel_coords(wheel_coords, ax, colors)
         # plot the pivot directions
         self.plot_wheel_pivot_directions(
-            ax,
-            len(odom) - 1,
-            wheel_coords,
-            colors["pivot"],
+            ax, len(odom) - 1, wheel_coords, colors["pivot"], legend=True, initial=False
         )
         center = self.get_base_center(wheel_coords)
-        self.plot_base_force_direction(ax, data_index, center, colors)
+        self.plot_base_force_direction(ax, data_index, center, colors, final=True)
 
     def plot_base_wheel_coords(
-        self, wheel_coords: np.ndarray, ax: plt.Axes, color: list | str, label: str = ""
+        self,
+        wheel_coords: np.ndarray,
+        ax: plt.Axes,
+        color: dict,
+        label: str = "",
+        initial=False,
     ):
         sns.scatterplot(
             x=wheel_coords[:, 1],
@@ -902,10 +1144,27 @@ class Plotter:
         # fll the rectangle
         y = [coord[0] for coord in wheel_coords]
         x = [coord[1] for coord in wheel_coords]
-        ax.fill(x, y, color=color, linewidth=0, alpha=0.25)
+
+        if not initial:
+            ax.fill(x, y, color=color.get("base"), label="Base")
+        else:
+            # connect the dots
+            for i in range(4):
+                ax.plot(
+                    [wheel_coords[i][1], wheel_coords[(i + 1) % 4][1]],
+                    [wheel_coords[i][0], wheel_coords[(i + 1) % 4][0]],
+                    color=color.get("base"),
+                    linewidth=2,
+                )
 
     def plot_wheel_pivot_directions(
-        self, ax: plt.Axes, data_index: int, wheel_coords: np.ndarray, color="blue"
+        self,
+        ax: plt.Axes,
+        data_index: int,
+        wheel_coords: np.ndarray,
+        color="blue",
+        legend: bool = True,
+        initial=False,
     ):
         pivot_1234 = self.mb_df.filter(
             regex="pivot_1|pivot_2|pivot_3|pivot_4|pivot_5"
@@ -920,13 +1179,17 @@ class Plotter:
             # get the wheel coordinates
             wheel = wheel_coords[i]
 
-            # if data_index == 0:
-            #     pivot = pivot + np.pi
+            if data_index == 0:
+                pivot = pivot + np.pi
 
             # get the pivot direction
             direction = np.array([np.cos(pivot), np.sin(pivot), 0])
 
-            label = "Pivot" if i == 0 else None
+            label = None
+            if i == 0:
+                label = (
+                    "Initial pivot direction" if initial else "Final pivot direction"
+                )
 
             # plot the pivot direction
             self.plot_arrow(
@@ -936,13 +1199,13 @@ class Plotter:
                 direction[1] / 20,
                 direction[0] / 20,
                 color,
-                label=label,
+                label=label if legend else None,
             )
 
     def plot_pivot_direction(self, ax: plt.Axes, pivot: float):
-        pivot_1234 = self.mb_df.filter(
-            regex="pivot_1|pivot_2|pivot_3|pivot_4|pivot_5"
-        )[200:]
+        pivot_1234 = self.mb_df.filter(regex="pivot_1|pivot_2|pivot_3|pivot_4|pivot_5")[
+            200:
+        ]
         x = np.arange(len(pivot_1234)) / 1000
         ax.plot(x, pivot_1234["pivot_1"], label="Pivot 1")
         ax.plot(x, pivot_1234["pivot_2"], label="Pivot 2")
@@ -952,10 +1215,9 @@ class Plotter:
         # legend
         ax.legend()
 
-        ax.set_xlabel('Time (s)')
-        ax.set_ylabel('Pivot Angle (rad)')
-        ax.set_title('(b) Pivot Direction', fontsize=25)
-
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Pivot Angle (rad)")
+        ax.set_title("(b) Pivot Direction", fontsize=25)
 
     def save_fig(self, file_name: str, title: str = None, fontsize: int = 12):
         assert file_name is not None, "file_name cannot be None"
@@ -974,7 +1236,12 @@ class Plotter:
             plt.suptitle("")
 
         plt.tight_layout()
-        plt.savefig(os.path.join(save_path, f"{file_name}.png"))
+        plt.savefig(
+            os.path.join(save_path, f"{file_name}.png"),
+            format="png",
+            transparent=True,
+            pad_inches=0.0,
+        )
 
         # copy the readme.md file to the save directory
         import shutil
