@@ -6,6 +6,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 from matplotlib.ticker import FuncFormatter
 
+time = 54
 
 def math_formatter(x, pos):
     return "%i" % x
@@ -130,7 +131,7 @@ class Plotter:
         rfy_smooth = pd.Series(r_f_transformed[:, 1]).rolling(window=window_size).mean()
         rmz_smooth = rmz.rolling(window=window_size).mean()
 
-        x = np.arange(len(lfx_smooth)) / 1000  # Time in seconds
+        x = np.linspace(0, time, len(lfx_smooth))
 
         fx = lfx_smooth + rfx_smooth
         fy = lfy_smooth + rfy_smooth
@@ -192,7 +193,7 @@ class Plotter:
         fy_smooth = pd.Series(f_transformed[:, 1]).rolling(window=window_size).mean()
         m_z_smooth = mz.rolling(window=window_size).mean()
 
-        x = np.arange(len(fx_smooth)) / 1000  # Time in seconds
+        x = np.linspace(0, time, len(fx_smooth))
 
         # plot x and y forces
         sns.lineplot(
@@ -238,7 +239,11 @@ class Plotter:
 
         dist_sp = self.uc_df["dist_sp"] * 100
 
-        x = np.arange(len(kr_ee_s_dist)) / 1000  # Time in seconds
+        # dist_sp upper bound (dist_sp + 0.25m)
+        dist_sp_ub = dist_sp + 5
+        dist_sp_lb = dist_sp - 5
+
+        x = np.linspace(0, time, len(kr_ee_s_dist))
 
         sns.lineplot(
             x=x,
@@ -260,9 +265,17 @@ class Plotter:
         # plot the setpoint
         sns.lineplot(
             x=x,
-            y=dist_sp,
+            y=dist_sp_ub,
             ax=ax,
             label=r"$\mathbf{d}_{\mathbf{sp}}$",
+            color=gcolors["green"],
+            linewidth=5,
+        )
+
+        sns.lineplot(
+            x=x,
+            y=dist_sp_lb,
+            ax=ax,
             color=gcolors["green"],
             linewidth=5,
         )
@@ -346,7 +359,7 @@ class UCPlotter:
 
         # plots in the paper
         # run_id = "09_08_2024_16_36_02" # backward (3s)
-        run_id = "07_08_2024_13_48_47" # backward (one minute)
+        # run_id = "07_08_2024_13_48_47" # backward (one minute)
 
         """
         Runs with additional PI controller on the platform velocity.
@@ -369,6 +382,17 @@ class UCPlotter:
         # runs in the paper
         # run_id = "09_08_2024_18_48_50"  # backward (10s)
         # run_id = "09_08_2024_20_33_38" # side (15s)
+
+        """
+        Runs at Bremen
+        """
+
+        # run_id = "02_12_2024_17_37_12" # going back with bilateral dist const (0.025m tube)
+        # run_id = "03_12_2024_16_29_55" # going side (0.035m tube)
+        # run_id = "03_12_2024_16_43_03" # going side (0.035m tube)
+        # run_id = "03_12_2024_17_35_12"
+        # run_id = "03_12_2024_17_40_40"
+        run_id = "03_12_2024_18_13_53"
 
         plotter = Plotter(self.run_dir)
         plotter.load_data(run_id)
@@ -393,7 +417,7 @@ class UCPlotter:
         axs.xaxis.label.set_fontsize(20)
         axs.yaxis.label.set_fontsize(20)
         axs.tick_params(axis="both", which="major", labelsize=20)
-        axs.legend(loc="lower left", fontsize=22)
+        axs.legend(loc="upper right", fontsize=22)
 
         plotter.plot_dist_ts(axs2)
         axs2.set_xlabel("Time [s]")
@@ -410,8 +434,8 @@ class UCPlotter:
 
         plt.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
 
-        plt.show()
-        # plotter.save_fig("uc1_ts_backward_4")
+        # plt.show()
+        plotter.save_fig("sc1_side_UB_bilateral3")
 
     def plot_uc2_ts(self):
         run_id = "07_08_2024_14_42_53"  # pushing back
