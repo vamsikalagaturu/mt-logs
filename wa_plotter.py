@@ -160,7 +160,15 @@ class UCPlotter:
 
         # run_id = "28_12_2024_16_42_58"
         # run_id = "28_12_2024_16_43_10"
-        run_id = "28_12_2024_16_43_20"
+        # run_id = "28_12_2024_16_43_20"
+        # run_id = "28_12_2024_16_47_47"
+        # run_id = "28_12_2024_16_49_38"
+
+        # run_id = "28_12_2024_17_01_16" # only w1 is misaligned
+
+        # run_id = "28_12_2024_17_19_00" # 0.01 w_align
+
+        run_id = "28_12_2024_17_27_26" # already alignedd
 
         plotter = Plotter(self.run_dir)
         plotter.load_wa_data(run_id)
@@ -175,7 +183,7 @@ class UCPlotter:
         axs.set_ylabel("Pivot Angle [rad]")
         axs.set_aspect("auto")
         axs.tick_params(axis="both", which="major", labelsize=20)
-        axs.legend(fontsize=20)
+        axs.legend(fontsize=15)
         # axs.xaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs.yaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs.xaxis.set_ticks(np.arange(0, 4, 1))
@@ -188,7 +196,7 @@ class UCPlotter:
         axs2.set_ylabel("Force [N]")
         axs2.set_aspect("auto")
         axs2.tick_params(axis="both", which="major", labelsize=20)
-        axs2.legend(fontsize=20)
+        axs2.legend(fontsize=15)
         # axs2.xaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs2.yaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs2.xaxis.set_ticks(np.arange(0, 4, 1))
