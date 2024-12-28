@@ -8,6 +8,7 @@ from matplotlib.ticker import FuncFormatter
 
 # time = 54
 
+
 def math_formatter(x, pos):
     return "%i" % x
 
@@ -31,7 +32,6 @@ class Plotter:
         self.current_dir = os.path.dirname(__file__)
         self.data_dir = "data"
         self.run_dir = run_dir
-        self.save_dir = os.path.join(self.current_dir, self.data_dir, self.run_dir, "plots")
 
         self.wa_file = "wheel_align_log.csv"
 
@@ -61,6 +61,9 @@ class Plotter:
             self.current_dir, self.data_dir, self.run_dir, run_id, self.wa_file
         )
         self.wa_df = pd.read_csv(wa_file_path, index_col=False)
+        self.save_dir = os.path.join(
+            self.current_dir, self.data_dir, self.run_dir, run_id
+        )
 
     def set_sns_props(self):
         sns.set_theme(style="whitegrid")
@@ -79,7 +82,7 @@ class Plotter:
             ax=ax,
             label=r"$p_{1}$",
             color=gcolors["blue"],
-            linewidth=5,
+            linewidth=2,
         )
 
     def plot_f_ref_null(self, ax: plt.Axes, bilateral: bool = True):
@@ -90,7 +93,6 @@ class Plotter:
         # f_drive = self.wa_df.filter(like="f_drive")
         # tau_c = self.wa_df.filter(like="tau_c")
 
-
         # x = np.linspace(0, time, len(kr_ee_s_dist))
         x = np.arange(len(f_drive_ref)) / 1000
 
@@ -100,7 +102,7 @@ class Plotter:
             ax=ax,
             label=r"$f_{driveRef2}$",
             color=gcolors["pink"],
-            linewidth=5,
+            linewidth=2,
         )
         sns.lineplot(
             x=x,
@@ -108,28 +110,35 @@ class Plotter:
             ax=ax,
             label=r"$f_{null2}$",
             color=gcolors["green"],
-            linewidth=5,
+            linewidth=2,
         )
+
+        ax2 = ax.twinx()
+
         sns.lineplot(
             x=x,
             y=f_null_scaled["f_null_scaled_2"],
-            ax=ax,
+            ax=ax2,
             label=r"$f_{nullScaled2}$",
             color=gcolors["red"],
-            linewidth=5,
+            linewidth=2,
         )
-
 
     def save_fig(self, file_name: str, title: str = None, fontsize: int = 12):
         assert file_name is not None, "file_name cannot be None"
 
-        os.makedirs(self.save_dir, exist_ok=True)
+        # os.makedirs(self.save_dir, exist_ok=True)
 
         if title is not None:
             plt.suptitle(title, fontsize=fontsize)
         else:
             # remove title
-            plt.suptitle("")
+            # plt.suptitle("")
+            pf = self.wa_df.filter(like="pf_").iloc[0]
+            plt.suptitle(
+                f"pf = [{pf['pf_x']}, {pf['pf_y']}, {pf['pf_z']}]",
+                fontsize=fontsize,
+            )
 
         plt.tight_layout()
         plt.savefig(
@@ -145,7 +154,9 @@ class UCPlotter:
         self.run_dir = run_dir
 
     def plot_data(self):
-        run_id = "28_12_2024_15_45_28"
+        # run_id = "28_12_2024_15_58_57"
+        run_id = "28_12_2024_15_59_09"
+        # run_id = "28_12_2024_16_06_13"
 
         plotter = Plotter(self.run_dir)
         plotter.load_wa_data(run_id)
@@ -184,7 +195,7 @@ class UCPlotter:
         plt.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
 
         # plt.show()
-        plotter.save_fig("sc2_pushing_back")
+        plotter.save_fig("wheel_align")
 
 
 if __name__ == "__main__":
