@@ -155,8 +155,12 @@ class UCPlotter:
 
     def plot_data(self):
         # run_id = "28_12_2024_15_58_57"
-        run_id = "28_12_2024_15_59_09"
+        # run_id = "28_12_2024_15_59_09"
         # run_id = "28_12_2024_16_06_13"
+
+        # run_id = "28_12_2024_16_42_58"
+        # run_id = "28_12_2024_16_43_10"
+        run_id = "28_12_2024_16_43_20"
 
         plotter = Plotter(self.run_dir)
         plotter.load_wa_data(run_id)
