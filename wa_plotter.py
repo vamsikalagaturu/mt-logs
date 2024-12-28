@@ -170,7 +170,7 @@ class UCPlotter:
 
         # run_id = "28_12_2024_17_27_26" # already alignedd
 
-        run_id = "28_12_2024_18_53_20" # scaled taus
+        run_id = "28_12_2024_19_12_11" # scaled taus
 
         plotter = Plotter(self.run_dir)
         plotter.load_wa_data(run_id)
