@@ -381,7 +381,7 @@ class UCPlotter:
 
         ### hddc2b
 
-        run_id = "29_12_2024_18_30_20"
+        run_id = "29_12_2024_18_41_07"
 
         plotter = Plotter(self.run_dir)
         plotter.load_data(run_id)
