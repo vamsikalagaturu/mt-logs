@@ -3,7 +3,6 @@ import pandas as pd
 import seaborn as sns
 import os
 import numpy as np
-from scipy.spatial.transform import Rotation as R
 from matplotlib.ticker import FuncFormatter
 
 # time = 54
@@ -124,6 +123,8 @@ class Plotter:
             linewidth=2,
         )
 
+        ax2.legend(fontsize=15, loc="lower right")
+
     def save_fig(self, file_name: str, title: str = None, fontsize: int = 12):
         assert file_name is not None, "file_name cannot be None"
 
@@ -170,7 +171,11 @@ class UCPlotter:
 
         # run_id = "28_12_2024_17_27_26" # already alignedd
 
-        run_id = "28_12_2024_19_12_11" # scaled taus
+        # run_id = "28_12_2024_19_12_11" # scaled taus
+
+        ## uc1
+
+        run_id = "29_12_2024_16_32_56"
 
         plotter = Plotter(self.run_dir)
         plotter.load_wa_data(run_id)
@@ -185,7 +190,7 @@ class UCPlotter:
         axs.set_ylabel("Pivot Angle [rad]")
         axs.set_aspect("auto")
         axs.tick_params(axis="both", which="major", labelsize=20)
-        axs.legend(fontsize=15)
+        axs.legend(fontsize=15, loc="upper right")
         # axs.xaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs.yaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs.xaxis.set_ticks(np.arange(0, 4, 1))
@@ -198,7 +203,7 @@ class UCPlotter:
         axs2.set_ylabel("Force [N]")
         axs2.set_aspect("auto")
         axs2.tick_params(axis="both", which="major", labelsize=20)
-        axs2.legend(fontsize=15)
+        axs2.legend(fontsize=15, loc="upper right")
         # axs2.xaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs2.yaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs2.xaxis.set_ticks(np.arange(0, 4, 1))
@@ -213,7 +218,8 @@ class UCPlotter:
 
 
 if __name__ == "__main__":
-    wa_run_dir = "wheel_align_log"
+    # wa_run_dir = "wheel_align_log"
+    wa_run_dir = "freddy_uc1_hddc2b_log"
 
     wa_plotter = UCPlotter(wa_run_dir)
     wa_plotter.plot_data()

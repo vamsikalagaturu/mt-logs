@@ -90,6 +90,9 @@ class Plotter:
         self.load_mb_data(run_id)
         self.load_uc_data(run_id)
         self.run_id = run_id
+        self.save_dir = os.path.join(
+            self.current_dir, self.data_dir, self.run_dir, run_id
+        )
 
     def set_sns_props(self):
         sns.set_theme(style="whitegrid")
@@ -249,8 +252,8 @@ class Plotter:
 
         if bilateral:
             # dist_sp upper bound (dist_sp + 0.25m)
-            dist_sp_ub = dist_sp + 5
-            dist_sp_lb = dist_sp - 5
+            dist_sp_ub = dist_sp + 2.5
+            dist_sp_lb = dist_sp - 2.5
 
         # x = np.linspace(0, time, len(kr_ee_s_dist))
         x = np.arange(len(kr_ee_s_dist)) / 1000
@@ -334,11 +337,11 @@ class Plotter:
         assert file_name is not None, "file_name cannot be None"
 
         # copy the readme.md file to the save directory
-        readme_path = os.path.join(
-            self.current_dir, self.data_dir, self.run_dir, self.run_id, "readme.md"
-        )
-        save_path = os.path.join(self.current_dir, self.save_dir, self.run_id)
-        os.makedirs(save_path, exist_ok=True)
+        # readme_path = os.path.join(
+        #     self.current_dir, self.data_dir, self.run_dir, self.run_id, "readme.md"
+        # )
+        # save_path = os.path.join(self.current_dir, self.save_dir, self.run_id)
+        # os.makedirs(save_path, exist_ok=True)
 
         if title is not None:
             plt.suptitle(title, fontsize=fontsize)
@@ -348,16 +351,16 @@ class Plotter:
 
         plt.tight_layout()
         plt.savefig(
-            os.path.join(save_path, f"{file_name}.png"),
+            os.path.join(self.save_dir, f"{file_name}.png"),
             format="png",
             transparent=True,
             pad_inches=0.0,
         )
 
-        # copy the readme.md file to the save directory
-        import shutil
+        # # copy the readme.md file to the save directory
+        # import shutil
 
-        shutil.copy2(readme_path, save_path)
+        # shutil.copy2(readme_path, save_path)
 
 
 class UCPlotter:
@@ -373,8 +376,12 @@ class UCPlotter:
         # run_id = "03_12_2024_16_29_55" # going side (0.035m tube)
         # run_id = "03_12_2024_16_43_03" # going side (0.035m tube)
         # run_id = "03_12_2024_17_35_12"
-        run_id = "03_12_2024_17_40_40"
+        # run_id = "03_12_2024_17_40_40"
         # run_id = "03_12_2024_18_13_53"
+
+        ### hddc2b
+
+        run_id = "29_12_2024_16_32_56"
 
         plotter = Plotter(self.run_dir)
         plotter.load_data(run_id)
@@ -385,7 +392,7 @@ class UCPlotter:
         axs = fig.add_subplot(122)
 
         if use_post_proc:
-            plotter.plot_f_at_base_after_post_proc(axs, window_size=50)
+            plotter.plot_f_at_base_after_post_proc(axs, window_size=1)
         else:
             plotter.plot_f_at_base_before_post_proc(axs, window_size=50)
 
@@ -394,7 +401,7 @@ class UCPlotter:
         axs.xaxis.set_major_formatter(FuncFormatter(math_formatter))
         axs.yaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs.xaxis.set_ticks(np.arange(0, 16, 4))
-        axs.yaxis.set_ticks(np.arange(-140, 180, 60))
+        # axs.yaxis.set_ticks(np.arange(-140, 180, 60))
         axs.set_aspect("auto")
         axs.xaxis.label.set_fontsize(20)
         axs.yaxis.label.set_fontsize(20)
@@ -407,7 +414,7 @@ class UCPlotter:
         axs2.xaxis.set_major_formatter(FuncFormatter(math_formatter))
         axs2.yaxis.set_major_formatter(FuncFormatter(math_formatter))
         # axs2.xaxis.set_ticks(np.arange(0, 16, 4))
-        axs2.yaxis.set_ticks(np.arange(60, 110, 10))
+        # axs2.yaxis.set_ticks(np.arange(60, 110, 10))
         axs2.set_aspect("auto")
         axs2.xaxis.label.set_fontsize(20)
         axs2.yaxis.label.set_fontsize(20)
@@ -417,7 +424,7 @@ class UCPlotter:
         plt.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
 
         # plt.show()
-        plotter.save_fig("sc1_side_UB_bilateral2")
+        plotter.save_fig("sc1_side_hddc2b_bilateral")
 
     def plot_uc2_ts(self):
         run_id = "07_08_2024_14_42_53"  # pushing back
@@ -463,7 +470,7 @@ class UCPlotter:
 
 
 if __name__ == "__main__":
-    uc1_run_dir = "freddy_uc1_log"
+    uc1_run_dir = "freddy_uc1_hddc2b_log"
     uc2_run_dir = "../data copy/freddy_uc2_align_log"
 
     uc1_plotter = UCPlotter(uc1_run_dir)
