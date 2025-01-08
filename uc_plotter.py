@@ -439,7 +439,7 @@ class UCPlotter:
         axs2 = fig.add_subplot(121)
         axs = fig.add_subplot(122)
 
-        plotter.plot_ee_force_ts(axs)
+        plotter.plot_ee_force_ts(axs, window_size=25)
         axs.xaxis.set_major_formatter(FuncFormatter(math_formatter))
         axs.yaxis.set_major_formatter(FuncFormatter(math_formatter))
         axs.set_xlabel("Time [s]")
