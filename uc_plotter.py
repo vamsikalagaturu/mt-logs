@@ -427,7 +427,9 @@ class UCPlotter:
         plotter.save_fig("sc1_side_hddc2b_bilateral")
 
     def plot_uc2_ts(self):
-        run_id = "07_08_2024_14_42_53"  # pushing back
+        # run_id = "07_08_2024_14_42_53"  # pushing back
+
+        run_id = "08_01_2025_15_04_26"
 
         plotter = Plotter(self.run_dir)
         plotter.load_data(run_id)
@@ -443,14 +445,14 @@ class UCPlotter:
         axs.set_xlabel("Time [s]")
         axs.set_ylabel("Force [N]")
         axs.xaxis.set_ticks(np.arange(0, 4, 1))
-        axs.yaxis.set_ticks(np.arange(-60, 30, 20))
+        axs.yaxis.set_ticks(np.arange(-100, 40, 40))
         axs.set_aspect("auto")
         axs.xaxis.label.set_fontsize(20)
         axs.yaxis.label.set_fontsize(20)
         axs.tick_params(axis="both", which="major", labelsize=20)
         axs.legend(loc="lower right", fontsize=22)
 
-        plotter.plot_dist_ts(axs2, bilateral=False)
+        plotter.plot_dist_ts(axs2)
         axs2.set_xlabel("Time [s]")
         axs2.set_ylabel("Distance [cm]")
         axs2.xaxis.set_major_formatter(FuncFormatter(math_formatter))
@@ -465,16 +467,16 @@ class UCPlotter:
 
         plt.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
 
-        plt.show()
-        # plotter.save_fig("sc2_pushing_back")
+        # plt.show()
+        plotter.save_fig("sc2_bil_pushing_back")
 
 
 if __name__ == "__main__":
     uc1_run_dir = "freddy_uc1_hddc2b_log"
-    uc2_run_dir = "../data copy/freddy_uc2_align_log"
+    uc2_run_dir = "freddy_uc2_bil_align_log"
 
-    uc1_plotter = UCPlotter(uc1_run_dir)
-    uc1_plotter.plot_uc1_ts(use_post_proc=True)
+    # uc1_plotter = UCPlotter(uc1_run_dir)
+    # uc1_plotter.plot_uc1_ts(use_post_proc=True)
 
-    # uc2_plotter = UCPlotter(uc2_run_dir)
-    # uc2_plotter.plot_uc2_ts()
+    uc2_plotter = UCPlotter(uc2_run_dir)
+    uc2_plotter.plot_uc2_ts()
